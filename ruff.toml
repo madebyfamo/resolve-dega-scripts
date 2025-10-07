@@ -1,0 +1,44 @@
+# Ruff configuration for DaVinci Resolve scripting workspace
+line-length = 100
+target-version = "py311"
+
+[lint]
+# Core rule sets for clean, modern Python
+select = [
+    "E",   # pycodestyle errors
+    "F",   # Pyflakes
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade (modernize syntax)
+    "ISC", # flake8-implicit-str-concat
+    "B",   # flake8-bugbear (likely bugs and design problems)
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+    "PYI", # flake8-pyi (stub files)
+]
+ignore = [
+    "E501", # line too long (handled by formatter)
+]
+
+# Allow fix for all enabled rules when --fix is provided
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.isort]
+# Organize imports efficiently
+combine-as-imports = true
+split-on-trailing-comma = false
+
+[format]
+# Black-compatible formatting
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# Enable docstring code formatting for better documentation
+docstring-code-format = true
+docstring-code-line-length = 100
+
