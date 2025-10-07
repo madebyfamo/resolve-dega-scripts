@@ -6,7 +6,7 @@ All 27 principle timelines have correct markers as of 2025-10-06.
 
 ## 🔑 The Golden Key
 
-**DaVinci Resolve 20.2+ requires marker duration ≥ 1 frame.**  
+**DaVinci Resolve 20.2+ requires marker duration ≥ 1 frame.**
 Duration=0 causes `AddMarker()` to silently return `False`.
 
 ## 🚀 Quick Commands
@@ -136,6 +136,6 @@ python3 dega_audit_markers.py | grep "🎉\|⚠️\|❌"
 
 ---
 
-**Last Updated**: 2025-10-06  
-**Status**: Production Ready 🚀  
+**Last Updated**: 2025-10-06
+**Status**: Production Ready 🚀
 **Confidence**: 100% 🔥

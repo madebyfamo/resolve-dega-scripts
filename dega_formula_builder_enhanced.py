@@ -1065,7 +1065,7 @@ def ensure_min_duration(dur_frames):
 def _add_marker_safe(tl, frame, color, name, note, dur_frames):
     # CRITICAL: Ensure duration >= 1 for Resolve 20.2+
     dur_frames = ensure_min_duration(dur_frames)
-    
+
     try:
         ok = tl.AddMarker(frame, color, name, note, dur_frames, "")
         if ok:
