@@ -807,6 +807,153 @@ SHOTFX_SPECIFIC = {
     ],
 }
 
+# ───────────────────────── Selects & Stringouts packs ─────────────────────────
+
+def _selects_variant_for_title(norm_title: str):
+    """Detect which Selects/Stringouts variant to use based on timeline name."""
+    t = norm_title.lower()
+    # Music-video / general performance selects
+    if "perf selects" in t or "performance selects" in t:
+        return "mv_perf"
+    # General B-Roll selects used across lanes
+    if "b-roll selects" in t or "broll selects" in t:
+        return "broll"
+    # Fashion
+    if "look selects" in t:
+        return "fashion_look"
+    # Talking head
+    if "a-roll selects" in t or "aroll selects" in t:
+        return "th_aroll"
+    # Day in the Life
+    if "selects — commute" in t or "selects - commute" in t or "commute" in t:
+        return "dil_commute"
+    if "coffee" in t:
+        return "dil_coffee"
+    if t.startswith("selects —") or t.startswith("selects -"):
+        return "dil_generic"
+    # Cook-Ups
+    if "overhead selects" in t:
+        return "cook_overhead"
+    if "front cam selects" in t or "front-camera selects" in t:
+        return "cook_front"
+    if "foley/prod selects" in t or "foley selects" in t or "prod selects" in t:
+        return "cook_foley"
+    # Stringouts (generic)
+    if "stringout" in t:
+        return "stringout_generic"
+    return None
+
+
+SELECTS_BASE = [
+    _mp(0.0, "Purple", "SELECTS — Workflow",
+        "Pass 1: reject hard misses. Pass 2: keep only 'A' material. Pass 3: choose alts."),
+    _mp(1.0, "Orange", "Labeling & notes",
+        "Use ⭐/color or keywords in Notes: hook, verse, cutaway, reaction, alt, NG."),
+    _mp(2.0, "Blue", "Cut points",
+        "Prefer cuts on motion/syllables; add 6–12f handles to each pick for safety."),
+    _mp(3.0, "Green", "Sync sanity",
+        "Mark claps/peaks; verify frame-accurate sync against waveform/transients."),
+    _mp(4.0, "Yellow", "Stringout pointers",
+        "Range-mark best beats; leave short gaps between ideas to hear pacing honestly."),
+    _mp(299.0, "Blue", "⏱ 5min anchor", ""),
+]
+
+SELECTS_SPECIFIC = {
+    # ——— Music-Video
+    "mv_perf": [
+        _mp(5.0, "Red", "Lyric map",
+            "Note bar:line references in Notes (e.g., V1L3). Keep best energy + clean lipsync."),
+        _mp(6.0, "Blue", "Angle variety",
+            "Favor angle changes on rhyme landings; avoid 3+ consecutive takes of same lens."),
+        _mp(7.0, "Pink", "Micro-ramps",
+            "Tag rampable hits (impact/word) for later 90–110% time-micro to sell emphasis."),
+    ],
+    "broll": [
+        _mp(5.0, "Orange", "Texture diversity",
+            "Collect movement textures (hands, lights, environment). Avoid duplicates of same move."),
+        _mp(6.0, "Cyan", "Parallax / depth",
+            "Prefer foreground passes & reveals; tag any perfect whip/cover for transitions."),
+        _mp(7.0, "Green", "Cutaway purpose",
+            "Each B-roll pick should illustrate a lyric/idea or hide an A-roll cut."),
+    ],
+
+    # ——— Fashion
+    "fashion_look": [
+        _mp(5.0, "Red", "Silhouette first",
+            "Pick one clean full-body read per look; then 2–3 detail shots (fabric, hardware)."),
+        _mp(6.0, "Blue", "Motion beauty",
+            "Walk/turn/hair moments with flow; reject frames that crush garment shape."),
+        _mp(7.0, "Yellow", "Color/texture continuity",
+            "Note lighting shifts; tag candidates for thumbnail/carousel."),
+    ],
+
+    # ——— Talking Head
+    "th_aroll": [
+        _mp(5.0, "Red", "Message spine",
+            "Select crisp claims and proofs; cut fillers/false starts/breath-tails."),
+        _mp(6.0, "Blue", "Cut on gesture",
+            "Hide jump cuts under head/hand motion; tag phrases needing B-roll coverage."),
+        _mp(7.0, "Green", "Caption sync",
+            "Keep phrase boundaries clean for line breaks; avoid mid-word cuts."),
+    ],
+    "th_broll": [
+        _mp(5.0, "Orange", "Illustrative matches",
+            "Pick visuals that literally prove the sentence; 1–2 per point max."),
+        _mp(6.0, "Cyan", "Readability",
+            "Avoid busy frames behind captions; prefer negative space or shallow DOF."),
+    ],
+
+    # ——— Day in the Life
+    "dil_generic": [
+        _mp(5.0, "Red", "Micro-scenes",
+            "Collect clear begin→middle→end beats (3–6s each)."),
+        _mp(6.0, "Blue", "Entrances/Exits",
+            "Favor shots with natural in/out motion for seamless chaining."),
+    ],
+    "dil_commute": [
+        _mp(5.0, "Orange", "Travel rhythm",
+            "Wheels/doors/steps ambience; grab a few speed & direction variations."),
+        _mp(6.0, "Green", "Landmarks",
+            "Tag 1–2 location wides for context; hold for 0.5–1.0s longer."),
+    ],
+    "dil_coffee": [
+        _mp(5.0, "Pink", "Hands & steam",
+            "Close-ups of pour/steam; use them to reset cadence later."),
+        _mp(6.0, "Yellow", "Loop beats",
+            "Pick a looping action (stir, sip, door swing) for intros/outros."),
+    ],
+
+    # ——— Cook-Ups
+    "cook_overhead": [
+        _mp(5.0, "Red", "Clean hits",
+            "Choose takes with clear pad contact & stable wrist; reject occluded hits."),
+        _mp(6.0, "Blue", "UI context",
+            "Grab short UI pans for key/plugin; make sure values are legible."),
+    ],
+    "cook_front": [
+        _mp(5.0, "Orange", "Energy & eye line",
+            "Prefer takes with micro-groove and camera engagement; avoid dead stares."),
+        _mp(6.0, "Green", "Reveal moments",
+            "Pick sequences that set up/pay off arrangement changes."),
+    ],
+    "cook_foley": [
+        _mp(5.0, "Cyan", "Transient truth",
+            "Select crisp knob turns/clicks; align to grid transient if needed."),
+        _mp(6.0, "Yellow", "Variety",
+            "Gather a library: short/long whooshes, reverse, button, cloth, hands."),
+    ],
+
+    # ——— Stringout (generic fallback)
+    "stringout_generic": [
+        _mp(5.0, "Red", "Order",
+            "Hook → context → develop → payoff. Keep a 3:1 selects-to-runtime ratio."),
+        _mp(6.0, "Blue", "Air for pacing",
+            "Leave tiny gaps between ideas; listen without music first, then add bed."),
+        _mp(7.0, "Green", "Markers to beats",
+            "Range-mark final beats to guide transitions and graphics later."),
+    ],
+}
+
 
 PRINCIPLE_PACKS = {
     # ③ Scenes & Segments — narrative rhythm + attention refresh
@@ -973,6 +1120,15 @@ def get_principle_markers_for_title(title):
         return []
 
     # Use contains matching with flexible patterns
+    # Selects & Stringouts — check FIRST to avoid collision with keywords like "look"
+    if "selects" in t or "stringout" in t:
+        base = SELECTS_BASE
+        var_key = _selects_variant_for_title(t)
+        if var_key and var_key in SELECTS_SPECIFIC:
+            return base + SELECTS_SPECIFIC[var_key]
+        # fallback: just the base tips
+        return base
+    
     # ShotFX - with variant-specific tips
     if ("shotfx" in t) or ("shot fx" in t):
         base = PRINCIPLE_PACKS["shotfx"]
@@ -992,7 +1148,7 @@ def get_principle_markers_for_title(title):
     if "section" in t:
         return PRINCIPLE_PACKS["cook_ups"]
 
-    # Leave selects, sync, and utility timelines untagged by default
+    # Leave sync and other utility timelines untagged by default
     return []
 
 

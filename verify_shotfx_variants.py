@@ -42,26 +42,28 @@ for i in range(1, cnt + 1):
     if not tl:
         continue
     title = tl.GetName() or ""
-    
+
     if ("ShotFX" in title or "Shot FX" in title) and "Money Master" not in title:
         markers = tl.GetMarkers() or {}
         marker_count = len(markers)
-        
+
         # Check which variant should be detected
         detected_variant = None
         for name_fragment, variant_key in expected_variants.items():
             if name_fragment in title:
                 detected_variant = variant_key
                 break
-        
+
         # Truncate title for display
         display_title = title[:35] + "..." if len(title) > 38 else title
-        
+
         status = "✅" if marker_count >= 6 else "⚠️"
         variant_str = detected_variant or "none"
         expected_str = "Enhanced" if detected_variant else "Base only"
-        
-        print(f"{status} {display_title:<35} | {marker_count:>7} | {variant_str:<16} | {expected_str}")
+
+        print(
+            f"{status} {display_title:<35} | {marker_count:>7} | {variant_str:<16} | {expected_str}"
+        )
 
 print("\n" + "=" * 85)
 print("📊 Summary:")

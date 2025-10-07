@@ -35,7 +35,7 @@ for i in range(1, cnt + 1):
         continue
     title = tl.GetName() or ""
     t_lower = title.lower()
-    
+
     if ("shotfx" in t_lower) or ("shot fx" in t_lower):
         if " money master" not in t_lower and not t_lower.startswith("money master"):
             shotfx_timelines.append(title)
@@ -48,14 +48,14 @@ print(f"Found {len(shotfx_timelines)} ShotFX timelines:\n")
 
 for title in shotfx_timelines:
     markers = get_principle_markers_for_title(title)
-    
+
     # Check if it's getting variant-specific markers
     variant = _shotfx_variant_for_title(title.lower())
-    
+
     print(f"📋 {title}")
     print(f"   Variant detected: {variant or 'none (base ShotFX only)'}")
     print(f"   Total markers: {len(markers)}")
-    
+
     if len(markers) > 4:  # More than base pack
         print(f"   ✅ Enhanced with variant-specific tips!")
         # Show first few variant markers
@@ -65,7 +65,7 @@ for title in shotfx_timelines:
             print(f"      {i}. {name}")
     else:
         print(f"   📌 Base ShotFX principles only")
-    
+
     print()
 
 print("=" * 80)
