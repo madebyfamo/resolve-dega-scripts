@@ -1057,7 +1057,15 @@ def _sec_to_frames(sec, fps_float):
     return int(round(sec * fps_float))
 
 
+def ensure_min_duration(dur_frames):
+    """Guard for Resolve 20.2+ which requires duration >= 1 frame."""
+    return max(1, int(dur_frames or 1))
+
+
 def _add_marker_safe(tl, frame, color, name, note, dur_frames):
+    # CRITICAL: Ensure duration >= 1 for Resolve 20.2+
+    dur_frames = ensure_min_duration(dur_frames)
+    
     try:
         ok = tl.AddMarker(frame, color, name, note, dur_frames, "")
         if ok:
