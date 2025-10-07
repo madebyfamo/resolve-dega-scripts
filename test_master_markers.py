@@ -36,7 +36,7 @@ for i in range(1, cnt + 1):
     if not tl:
         continue
     title = tl.GetName() or ""
-    
+
     # Check if it's a master timeline
     t_lower = title.lower()
     if " money master" in t_lower or t_lower.startswith("money master"):
@@ -53,12 +53,12 @@ else:
         # Truncate long titles
         display_title = title[:57] + "..." if len(title) > 60 else title
         print(f"{status} {display_title:<58} | {count:>7}")
-    
+
     print("\n📈 Summary:")
     print(f"  Master timelines found: {len(master_timelines)}")
     with_markers = sum(1 for _, c in master_timelines if c > 0)
     print(f"  With markers: {with_markers}/{len(master_timelines)}")
-    
+
     if with_markers == len(master_timelines):
         print("\n🎉 All master timelines have markers!")
     else:

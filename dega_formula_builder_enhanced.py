@@ -683,6 +683,131 @@ def _mp(t, color, name, notes, dur=0.0):
     return _mm(t, color, name, dur, notes)
 
 
+# ───────────────────────── ShotFX variant marker packs ─────────────────────────
+
+def _shotfx_variant_for_title(norm_title: str):
+    """Detect which ShotFX variant to use based on timeline name."""
+    t = norm_title.lower()
+    if "clone" in t:
+        return "clone"
+    if "clean plate" in t:
+        return "clean_plate"
+    if "background" in t and "cleanup" in t:
+        return "background_cleanup"
+    if ("remove" in t and "mic" in t) or "mic cable" in t:
+        return "remove_mic_cable"
+    if "hand split" in t:
+        return "hand_split"
+    if "screen insert" in t or "(ui)" in t or ("screen" in t and "insert" in t):
+        return "screen_insert"
+    return None
+
+
+SHOTFX_SPECIFIC = {
+    # Music-video clone / hallway clone, etc.
+    "clone": [
+        _mp(0.0, "Orange", "Prep / Plates",
+            "Lock-off or perfectly repeatable move. Shoot a clean plate. Keep exposure/WB fixed."),
+        _mp(1.0, "Blue", "Mask strategy",
+            "Plan overlap: decide who passes in front. Soft 6–10px feather; avoid hair edges on seams."),
+        _mp(2.0, "Green", "Parallax sanity",
+            "If handheld, stabilize BOTH plates before masking. Align on hard verticals (door frames)."),
+        _mp(3.0, "Pink", "Seam check (Difference)",
+            "Use a Difference/Blend preview to locate seam crawl; nudge mask or warp to match."),
+        _mp(4.0, "Cyan", "Shadows / occlusion",
+            "Ensure correct layer order where subjects cross; paint/contact-shadow fix if needed."),
+        _mp(5.0, "Yellow", "Grain / blur match",
+            "Match grain and motion blur between plates; add grain last so edges integrate."),
+        _mp(6.0, "Purple", "Continuity glance",
+            "Watch hands/feet for pops at the seam during moves; micro-transform if necessary."),
+        _mp(299.0, "Blue", "⏱ 5min anchor", ""),
+    ],
+
+    # Beauty cleanup using a clean plate or adjacent frame
+    "clean_plate": [
+        _mp(0.0, "Orange", "Choose source",
+            "Prefer adjacent frames over stills to keep texture; avoid plastic look."),
+        _mp(1.0, "Blue", "Track first",
+            "Corner/planar or point track the patch area; stabilize into a working space, then composite."),
+        _mp(2.0, "Green", "Patch blend",
+            "Use soft, irregular masks; bias feather into patch. Match local contrast, not global."),
+        _mp(3.0, "Pink", "Skin texture",
+            "Do not blur: borrow texture from nearby skin; keep pores. Add tiny monochrome grain if needed."),
+        _mp(4.0, "Cyan", "Temporal sanity",
+            "If the head moves, use a short temporal patch (few frames) rather than one still."),
+        _mp(5.0, "Yellow", "Color/Specular",
+            "Match micro highlights; reduce spec hotspots with gentle curve, not blur."),
+        _mp(299.0, "Blue", "⏱ 5min anchor", ""),
+    ],
+
+    # Removing signs, cables, wall junk, etc.
+    "background_cleanup": [
+        _mp(0.0, "Orange", "Analyze plane",
+            "Is it flat (planar track) or curved (mesh/point)? Choose tracker accordingly."),
+        _mp(1.0, "Blue", "Perspective insert",
+            "Corner-pin a clean patch in perspective; match lens distortion if heavy wide."),
+        _mp(2.0, "Green", "Edge contamination",
+            "Avoid straight mask edges across textured bricks/tiles; irregular feather sells it."),
+        _mp(3.0, "Pink", "Lighting continuity",
+            "Replicate falloff & vignette; add tiny shadow where object was so wall doesn't look 'too clean'."),
+        _mp(4.0, "Yellow", "Grain / noise",
+            "Sample target area's noise level; add back after composite to prevent 'cutout' look."),
+        _mp(299.0, "Blue", "⏱ 5min anchor", ""),
+    ],
+
+    # Paint-out for a lav/mic cable crossing the hand/arm
+    "remove_mic_cable": [
+        _mp(0.0, "Orange", "Prep",
+            "Stabilize the hand region (temp) to simplify paint/roto; work in stabilized space."),
+        _mp(1.0, "Blue", "Roto contour",
+            "Follow knuckle silhouettes; keep feather into skin not into background."),
+        _mp(2.0, "Green", "Clone/patch passes",
+            "Borrow from nearby skin frames; track to hand motion; avoid sliding texture."),
+        _mp(3.0, "Pink", "Specular continuity",
+            "Rebuild highlight streaks across the patch; tiny dodge/burn beats blur every time."),
+        _mp(4.0, "Cyan", "Motion blur",
+            "Match shutter blur on fast finger moves; composite pre-blur, not post."),
+        _mp(5.0, "Yellow", "Final grain",
+            "Add matched grain over the composite; check at 100% zoom."),
+        _mp(299.0, "Blue", "⏱ 5min anchor", ""),
+    ],
+
+    # Split/duplicate hand at sampler/pads
+    "hand_split": [
+        _mp(0.0, "Orange", "Plates & timing",
+            "Record two performance passes to the same click; clap or beep for sync."),
+        _mp(1.0, "Blue", "Registration",
+            "Lock camera; if not, stabilize both plates to the sampler face."),
+        _mp(2.0, "Green", "Mask logic",
+            "Choose overlap line along hardware edges; avoid finger edges crossing seam."),
+        _mp(3.0, "Pink", "Pad feedback",
+            "Duplicate LED/hit feedback under the correct hand; avoid double-lit pads."),
+        _mp(4.0, "Cyan", "Audio truth",
+            "If printing live audio, comp the correct take for each hit; no double hits."),
+        _mp(5.0, "Yellow", "Micro parallax",
+            "If hands drift apart, micro-warp one plate to the other near the seam."),
+        _mp(299.0, "Blue", "⏱ 5min anchor", ""),
+    ],
+
+    # Screen/UI insert
+    "screen_insert": [
+        _mp(0.0, "Orange", "Track",
+            "Planar track the screen surface; verify track on edges & diagonals, not just corners."),
+        _mp(1.0, "Blue", "Corner pin",
+            "Apply corner pin; precomp UI at native aspect; avoid subpixel shimmer by slight defocus."),
+        _mp(2.0, "Green", "Display look",
+            "Gamma lift + slight saturation cut; add 1–2 px inner glow and faint reflection pass."),
+        _mp(3.0, "Pink", "Motion blur & flicker",
+            "Match shutter blur; optional subtle 0.5–1% luminance flicker to sell emissive panel."),
+        _mp(4.0, "Cyan", "Moire / aliasing",
+            "Add tiny grain and 0.2–0.4 px defocus to kill moire while keeping UI crisp enough."),
+        _mp(5.0, "Yellow", "Light spill",
+            "Add light wrap onto bezels/fingers at bright frames; very low opacity."),
+        _mp(299.0, "Blue", "⏱ 5min anchor", ""),
+    ],
+}
+
+
 PRINCIPLE_PACKS = {
     # ③ Scenes & Segments — narrative rhythm + attention refresh
     "scenes_segments": [
@@ -848,8 +973,14 @@ def get_principle_markers_for_title(title):
         return []
 
     # Use contains matching with flexible patterns
+    # ShotFX - with variant-specific tips
     if ("shotfx" in t) or ("shot fx" in t):
-        return PRINCIPLE_PACKS["shotfx"]
+        base = PRINCIPLE_PACKS["shotfx"]
+        var_key = _shotfx_variant_for_title(t)
+        if var_key and var_key in SHOTFX_SPECIFIC:
+            # Combine base principles + the variant-specific tips
+            return base + SHOTFX_SPECIFIC[var_key]
+        return base
     if "segment" in t:
         return PRINCIPLE_PACKS["scenes_segments"]
     if "interview" in t:

@@ -20,6 +20,7 @@ print()
 print("1️⃣  Testing DaVinci Resolve connection...")
 try:
     import DaVinciResolveScript as dvr
+
     resolve = dvr.scriptapp("Resolve")
     if not resolve:
         print("   ❌ Cannot connect to DaVinci Resolve")
@@ -80,10 +81,13 @@ for i in range(1, cnt + 1):
     if not tl:
         continue
     title = (tl.GetName() or "").lower()
-    
+
     if " money master" in title or title.startswith("money master"):
         master_count += 1
-    elif any(x in title for x in ["segment", "shotfx", "shot fx", "interview", "look", "chapter", "section"]):
+    elif any(
+        x in title
+        for x in ["segment", "shotfx", "shot fx", "interview", "look", "chapter", "section"]
+    ):
         principle_count += 1
 
 print(f"   ✅ Found {principle_count} principle timelines")
@@ -99,11 +103,14 @@ for i in range(1, cnt + 1):
     if not tl:
         continue
     title = (tl.GetName() or "").lower()
-    
+
     if " money master" in title or title.startswith("money master"):
         continue
-    
-    if any(x in title for x in ["segment", "shotfx", "shot fx", "interview", "look", "chapter", "section"]):
+
+    if any(
+        x in title
+        for x in ["segment", "shotfx", "shot fx", "interview", "look", "chapter", "section"]
+    ):
         markers = tl.GetMarkers() or {}
         if len(markers) >= 4:
             principle_with_markers += 1
@@ -125,20 +132,20 @@ for i in range(1, min(cnt + 1, 10)):
         continue
     title = tl.GetName() or ""
     title_lower = title.lower()
-    
+
     if "segment" in title_lower and "money master" not in title_lower:
         markers = tl.GetMarkers() or {}
         fps_obj = tl.GetSetting("timelineFrameRate")
         fps = float(fps_obj or 29.97)
-        
+
         # Check for markers at 0s, 1s, 2s
         expected_frames = [0, int(fps), int(fps * 2)]
         found_frames = [int(f) for f in markers.keys()]
-        
+
         found_at_start = any(f <= 1 for f in found_frames)
         found_at_1s = any(abs(f - fps) <= 2 for f in found_frames)
         found_at_2s = any(abs(f - fps * 2) <= 2 for f in found_frames)
-        
+
         if found_at_start and found_at_1s and found_at_2s:
             print(f"   ✅ Sample timeline '{title[:40]}...' has proper spacing")
             found_sample = True
@@ -156,16 +163,19 @@ for i in range(1, min(cnt + 1, 10)):
         continue
     title = tl.GetName() or ""
     title_lower = title.lower()
-    
-    if any(x in title_lower for x in ["segment", "shotfx", "chapter"]) and "money master" not in title_lower:
+
+    if (
+        any(x in title_lower for x in ["segment", "shotfx", "chapter"])
+        and "money master" not in title_lower
+    ):
         markers = tl.GetMarkers() or {}
         fps_obj = tl.GetSetting("timelineFrameRate")
         fps = float(fps_obj or 29.97)
-        
+
         # Check for marker near 299s
         anchor_frame = int(fps * 299)
         found_frames = [int(f) for f in markers.keys()]
-        
+
         if any(abs(f - anchor_frame) <= 10 for f in found_frames):
             print(f"   ✅ Found 299s anchor marker in '{title[:40]}...'")
             found_anchor = True
