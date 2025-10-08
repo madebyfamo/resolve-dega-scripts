@@ -2,7 +2,7 @@
 
 **Date**: October 6, 2025
 **Project**: tu sabe
-**Script**: dega_formula_builder_enhanced.py (v4.5)
+**Script**: the_dega_template_full.py (v4.5)
 
 ---
 
@@ -139,11 +139,11 @@ def seed_principle_markers_across_project(project, mp):
 ### Idempotency Test
 ```bash
 # Run 1
-python3 dega_formula_builder_enhanced.py
+python3 the_dega_template_full.py
 # Output: ↻ Markers present (4) — skipping re-seed
 
 # Run 2 (with force)
-DEGA_PRINCIPLE_FORCE_RESEED=1 python3 dega_formula_builder_enhanced.py
+DEGA_PRINCIPLE_FORCE_RESEED=1 python3 the_dega_template_full.py
 # Output: ✓ Markers added successfully
 
 # Audit
@@ -188,7 +188,7 @@ python3 dega_audit_markers.py
 ## 📝 FILES DELIVERED
 
 ### Core Files
-- `dega_formula_builder_enhanced.py` (1631 lines) - Main script with fixes
+- `the_dega_template_full.py` (1631 lines) - Main script with fixes
 - `dega_audit_markers.py` (130 lines) - Fast audit tool
 - `dega_fix_segment_markers.py` (73 lines) - Surgical fix tool
 

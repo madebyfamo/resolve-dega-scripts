@@ -8,7 +8,7 @@ sys.path.insert(
     "/Users/rodneywright/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility",
 )
 
-from dega_formula_builder_enhanced import get_principle_markers_for_title, PRINCIPLE_PACKS
+from the_dega_template_full import get_principle_markers_for_title, PRINCIPLE_PACKS
 
 test_names = [
     "Segment — Verse Performance — ⏱ 29.97p • 📐 2160×3840",

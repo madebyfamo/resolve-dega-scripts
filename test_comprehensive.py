@@ -41,7 +41,7 @@ content = None
 has_guard = False
 guard_called = False
 try:
-    with open("dega_formula_builder_enhanced.py", "r", encoding="utf-8") as f:
+    with open("the_dega_template_full.py", "r", encoding="utf-8") as f:
         content = f.read()
         if "def ensure_min_duration(dur_frames):" in content:
             print("   ✅ ensure_min_duration() function found")

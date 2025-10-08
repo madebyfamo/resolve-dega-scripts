@@ -66,7 +66,7 @@ if dur < 1:
 
 ## Files Modified
 
-- `dega_formula_builder_enhanced.py`:
+- `the_dega_template_full.py`:
   - Added `import wave, struct` for silent clip generation
   - Fixed `get_principle_markers_for_title()` matcher
   - Added minimum duration check in `add_markers_to_timeline_if_empty()`
@@ -85,7 +85,7 @@ python3 dega_formula_builder_enhanced.py
 
 To force re-seed markers on timelines that already have markers:
 ```bash
-DEGA_PRINCIPLE_FORCE_RESEED=1 python3 dega_formula_builder_enhanced.py
+DEGA_PRINCIPLE_FORCE_RESEED=1 python3 the_dega_template_full.py
 ```
 
 ## Verification

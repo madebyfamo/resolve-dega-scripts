@@ -15,7 +15,7 @@ except ImportError:
 
 # Import the functions from the main script
 sys.path.insert(0, script_dir)
-exec(open("dega_formula_builder_enhanced.py").read(), globals())
+exec(open("the_dega_template_full.py").read(), globals())
 
 resolve = dvr.scriptapp("Resolve")
 pm = resolve.GetProjectManager()

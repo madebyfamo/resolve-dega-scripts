@@ -146,7 +146,7 @@ Our Ruff configuration includes:
 ├── templates/                 # Script templates
 │   ├── python_resolve_template.py
 │   └── lua_resolve_template.lua
-├── dega_formula_builder_enhanced.py  # Main production script
+├── the_dega_template_full.py          # Main production script
 ├── resolve_env_probe.py       # Environment testing
 └── logs/                      # Generated log files (gitignored)
 ```

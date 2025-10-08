@@ -77,7 +77,7 @@ This function is now called in `_add_marker_safe()` to prevent duration=0 bugs.
 
 ```
 Utility/
-├── dega_formula_builder_enhanced.py  # Main builder
+├── the_dega_template_full.py          # Main builder
 ├── dega_audit_markers.py             # Fast audit tool
 ├── dega_fix_segment_markers.py       # Individual timeline fixer
 ├── verify_markers.py                 # Detailed verification

@@ -1128,7 +1128,7 @@ def get_principle_markers_for_title(title):
             return base + SELECTS_SPECIFIC[var_key]
         # fallback: just the base tips
         return base
-    
+
     # ShotFX - with variant-specific tips
     if ("shotfx" in t) or ("shot fx" in t):
         base = PRINCIPLE_PACKS["shotfx"]
