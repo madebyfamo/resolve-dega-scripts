@@ -386,6 +386,6 @@ Main Script (Deployed):
 
 ---
 
-**Last Updated:** October 8, 2025  
-**Version:** 1.0  
+**Last Updated:** October 8, 2025
+**Version:** 1.0
 **For:** DaVinci Resolve DEGA Script Deployment

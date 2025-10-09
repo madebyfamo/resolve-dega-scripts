@@ -8,7 +8,7 @@
 
 **ALWAYS DEPLOY AFTER CODE CHANGES**
 
-DaVinci Resolve does NOT run scripts from the dev directory.  
+DaVinci Resolve does NOT run scripts from the dev directory.
 Changes are invisible until deployed.
 
 ---

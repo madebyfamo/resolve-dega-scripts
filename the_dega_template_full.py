@@ -2614,7 +2614,10 @@ def main():
                     if not tier:
                         tier = (
                             "selects"
-                            if ("selects" in title.lower() or "stringouts" in title.lower())
+                            if (
+                                "selects" in title.lower()
+                                or "stringouts" in title.lower()
+                            )
                             else "30s"
                         )
                     enriched = _enrich_marker_notes(_pm, lane, tier)

@@ -15,6 +15,7 @@ def get_resolve():
             pass
     try:
         import DaVinciResolveScript as dvr
+
         return dvr.scriptapp("Resolve")
     except:
         pass
@@ -26,32 +27,32 @@ def main():
     resolve = get_resolve()
     pm = resolve.GetProjectManager()
     proj = pm.GetCurrentProject()
-    
+
     print(f"📊 Project: {proj.GetName()}\n")
-    
+
     # Find a segment timeline
     for i in range(1, int(proj.GetTimelineCount()) + 1):
         tl = proj.GetTimelineByIndex(i)
         if not tl:
             continue
-        
+
         name = tl.GetName() or ""
         if "Segment —" in name:
             print(f"🎬 Timeline: {name}")
             markers = tl.GetMarkers()
-            
+
             if not markers:
                 print("   ⚠️  No markers found\n")
                 continue
-            
+
             print(f"   📍 Found {len(markers)} markers:\n")
-            
+
             for frame, data in sorted(markers.items()):
                 print(f"   Frame {frame}:")
                 print(f"      Name:  {data.get('name', 'N/A')}")
                 print(f"      Color: {data.get('color', 'N/A')}")
                 print(f"      Duration: {data.get('duration', 'N/A')}")
-                note = data.get('note', '') or ''
+                note = data.get("note", "") or ""
                 if note:
                     print(f"      Note ({len(note)} chars):")
                     # Show first 300 chars
@@ -62,10 +63,10 @@ def main():
                 else:
                     print(f"      Note:  (empty)")
                 print()
-            
+
             # Only check first matching timeline
             break
-    
+
     print("=" * 80)
 
 

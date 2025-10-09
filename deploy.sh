@@ -93,7 +93,7 @@ if [ ! -d "${RESOLVE_UTILITY}" ]; then
     echo ""
     echo -e "${YELLOW}📁 Creating Utility directory...${NC}"
     mkdir -p "${RESOLVE_UTILITY}"
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Directory created: ${RESOLVE_UTILITY}${NC}"
     else
@@ -111,11 +111,11 @@ fi
 if [ -f "${TARGET_PATH}" ]; then
     TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
     BACKUP_PATH="${RESOLVE_UTILITY}/${SOURCE_FILE}.backup_${TIMESTAMP}"
-    
+
     echo ""
     echo -e "${YELLOW}📦 Backing up existing script...${NC}"
     cp "${TARGET_PATH}" "${BACKUP_PATH}"
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Backup created: ${BACKUP_PATH}${NC}"
     else
@@ -136,7 +136,7 @@ if cmp -s "${SOURCE_PATH}" "${TARGET_PATH}"; then
     echo -e "${GREEN}✅ Already up-to-date${NC}"
 else
     cp -f "${SOURCE_PATH}" "${TARGET_PATH}"
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Copy successful${NC}"
     else
@@ -154,7 +154,7 @@ if [ -f "${TARGET_PATH}" ]; then
     echo ""
     echo -e "${GREEN}✅ Verification: File exists at target location${NC}"
     echo "   Size: ${FILE_SIZE}"
-    
+
     # Extract version from file
     VERSION=$(grep -m 1 "DEGA.*Builder.*v[0-9]" "${TARGET_PATH}" | sed -E 's/.*v([0-9]+\.[0-9]+).*/\1/')
     if [ -n "${VERSION}" ]; then
