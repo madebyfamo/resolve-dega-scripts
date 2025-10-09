@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """
-DEGA — "The Formula" Builder (Resolve 20.2) — v4.6
+DEGA — "The Formula" Builder (Resolve 20.2) — v4.7
 Vertical 2160×3840 @ 29.97p • Emoji/Pipe naming • Non-destructive
 
+What's new in v4.7
+- Seconds-only pacing: Pure seconds-based cut guidance (no beat math) tailored by lane & tier.
+- Butt-joined markers: Adjacent markers extend to touch (1-frame butt) for seamless color bands.
+- 6 lanes × 3 tiers: Money, MV, Fashion, Talking, DIL, Cook-Ups each with 12s/22s/30s variants.
+- Section-specific guidance: HOOK, DRAW, COMMIT/PAYOFF, etc. get unique seconds ranges per context.
+- Applied to ALL timelines: Masters and principle timelines (Segments, ShotFX, Selects, etc.).
+
 What's new in v4.6
-- Cut-note enrichment: Every marker now includes lane-specific and tier-specific
-  edit pacing guidance (shot duration ranges, cutting strategies) appended to notes.
-- Tight marker borders: Markers end 1 frame before the next by default for gapless
-  color bands (disable with DEGA_MARKER_TIGHT_BORDERS=0).
-- Applied to ALL timelines: Money Masters, pillar masters (MV, Fashion, TH, DIL, Cook-Ups),
-  principle timelines (Scenes/Segments, ShotFX, Selects/Stringouts, etc.).
+- Cut-note enrichment with lane/tier-specific edit pacing guidance
+- Tight marker borders (1-frame gaps) for visual clarity
 
 What's new in v4.5
-- Tiered marker templates (12s / 22s / 30s) added natively to *every* lane's Master Build:
-  • Money, MV Snippets, Fashion, Talking Head, Day in the Life, Cook-Ups
+- Tiered marker templates (12s / 22s / 30s) added natively to every lane's Master Build
 - Richer marker Notes (research-informed) + explicit timing ranges
 - Safe re-seed: markers added only if a timeline has 0 markers (avoids dupes)
-- Still upgrades track labels/checkerboarding on existing timelines
 """
 
 import datetime
@@ -57,7 +58,7 @@ def setup_logger(name="dega_builder", level=logging.INFO):
     logger.addHandler(ch)
     logger.addHandler(fh)
     logger.propagate = False
-    logger.info("🚀 DEGA Formula Builder v4.6 starting…")
+    logger.info("🚀 DEGA Formula Builder v4.7 starting…")
     logger.info("📝 Log file: %s", log_path)
     return logger
 
@@ -1604,103 +1605,207 @@ PRINCIPLE_PACKS = {
 }
 
 
-# ───────────────────────── Edit pacing guidance (global) ─────────────────────────
-_CUT_GUIDE_DEFAULT = {
-    "HOOK": "Edit pacing: average shot 0.6–1.0s; avoid holds >1.3s unless a reveal lands.",
-    "DRAW": "Edit pacing: 0.8–1.5s per beat; each cut must add new info/contrast.",
-    "INTERRUPT": "Edit pacing: ≤0.5–0.7s micro-jolt (whip/insert/flip).",
-    "COMMIT / PAYOFF": "Edit pacing: let clarity breathe 1.2–2.2s; cut earlier if energy dips.",
-    "COMMIT / PAYOFF #1": "Edit pacing: 1.0–1.8s; extend only for readability/proof.",
-    "SECOND HOOK": "Edit pacing: 0.7–1.2s beats; sharper than the first to recapture.",
-    "DEVELOP": "Edit pacing: 1.0–1.8s/beat; 2–3 support beats max before moving on.",
-    "DEVELOP A": "Edit pacing: ~1.3–1.9s/beat; escalate motion/variation every 2–3 cuts.",
-    "DEVELOP B": "Edit pacing: ~1.0–1.6s/beat; quicker than A to build into the close.",
-    "FINAL PAYOFF / LOOP": "Edit pacing: 0.8–1.5s; favor clean loop seam or unmistakable CTA.",
-    "LOOP / CTA": "Edit pacing: 0.5–1.2s; quick, readable, loop-friendly.",
-}
-
-# Lane-specific nudges layered on top
-_CUT_GUIDE_BY_LANE = {
+# ───────────────────────── Seconds-only pacing (lane ▸ tier ▸ section) ─────────────────────────
+PACING_S = {
     "money": {
-        "HOOK": "Money nuance: keep copy plain; 0.6–0.9s 'receipt' cut is ideal.",
-        "COMMIT / PAYOFF": "Money nuance: up to ~2.4s if proof needs a clean read.",
+        "12s": {
+            "HOOK": "Cut every ~0.8–1.2s; micro-jolt ≤0.7s ok.",
+            "DRAW": "Quicker trims ~0.6–0.9s; 1 brisk insert per beat of idea.",
+            "COMMIT / PAYOFF": "Let proof breathe 1.2–1.8s; single cut-ins ≤0.5s.",
+            "LOOP / CTA": "Button ≤0.7s; avoid extra frames after action lands.",
+        },
+        "22s": {
+            "HOOK": "0.9–1.3s cadence.",
+            "DRAW": "0.7–1.0s cadence; allow 1 contrast cut ≤0.5s.",
+            "INTERRUPT #1": "≤0.6s burst.",
+            "COMMIT / PAYOFF #1": "1.4–2.0s; 1–2 inserts ≤0.5s.",
+            "SECOND HOOK": "0.8–1.1s, punchier than first hook.",
+            "DEVELOP": "1.0–1.4s trims; chain 2 beats max.",
+            "LOOP / CTA": "0.6–0.9s clean loop frame.",
+        },
+        "30s": {
+            "HOOK": "1.0–1.4s cadence.",
+            "DRAW": "0.9–1.2s; maintain forward pressure.",
+            "COMMIT / PAYOFF #1": "1.5–2.2s; inserts ≤0.6s.",
+            "SECOND HOOK": "0.9–1.2s; keep phrasing fresh.",
+            "DEVELOP A": "1.1–1.6s trims; avoid meander.",
+            "DEVELOP B": "1.1–1.6s trims; escalate or contrast.",
+            "FINAL PAYOFF / LOOP": "0.9–1.3s; land on loopable motion.",
+        },
     },
     "mv": {
-        "HOOK": "MV nuance: front-load signature visual; 0.5–0.9s with rhythm accents.",
-        "DRAW": "MV nuance: lean on lyric/beat sync; stay <1.3s unless choreography sells.",
-        "COMMIT / PAYOFF": "MV nuance: musical phrase can justify 1.5–2.2s; add camera energy if longer.",
+        "12s": {
+            "HOOK (Signature Visual)": "0.7–1.0s; snap on motion apex.",
+            "DRAW (Aesthetic Lift)": "0.6–0.9s; switch angle/location quickly.",
+            "COMMIT / PAYOFF": "1.2–1.6s on best performance bar; cut-ins ≤0.5s.",
+            "LOOP / CTA": "≤0.7s with repeatable motion.",
+        },
+        "22s": {
+            "HOOK": "0.9–1.2s; hit downbeat moves.",
+            "DRAW": "0.7–1.0s; texture/move alternation.",
+            "COMMIT / PAYOFF #1": "1.4–1.9s; preserve groove.",
+            "SECOND HOOK": "0.8–1.1s; fresh pose/transition.",
+            "DEVELOP": "1.0–1.4s; 2-beat mini-sequence.",
+            "LOOP / CTA": "0.6–0.9s.",
+        },
+        "30s": {
+            "HOOK": "1.0–1.3s; signature move early.",
+            "DRAW": "0.9–1.2s; keep energy rising.",
+            "COMMIT / PAYOFF #1": "1.5–2.1s; show payoff clean.",
+            "SECOND HOOK": "0.9–1.2s.",
+            "DEVELOP A": "1.1–1.5s per move sequence.",
+            "DEVELOP B": "1.1–1.5s, environment interplay.",
+            "FINAL PAYOFF / LOOP": "0.9–1.2s loop close.",
+        },
     },
     "fashion": {
-        "HOOK": "Fashion nuance: silhouette read > flash; 0.8–1.4s pose can hold if clean.",
-        "DRAW": "Fashion nuance: detail inserts ~0.7–1.1s; avoid back-to-back similar textures.",
-        "COMMIT / PAYOFF": "Fashion nuance: full-body/transition may hold 1.6–2.4s if attitude carries.",
+        "12s": {
+            "HOOK (Hero Fit Moment)": "0.7–1.0s; silhouette read first.",
+            "DRAW (Detail Contrast)": "0.6–0.9s; alternate texture/motion.",
+            "COMMIT / PAYOFF": "1.2–1.6s full-body; detail cut-ins ≤0.5s.",
+            "LOOP / CTA": "≤0.7s on a repeatable turn/step.",
+        },
+        "22s": {
+            "HOOK (Look Identity)": "0.8–1.1s.",
+            "DRAW (Texture/Movement)": "0.7–1.0s; emphasize fabric motion.",
+            "COMMIT / PAYOFF #1": "1.3–1.8s head-to-toe.",
+            "SECOND HOOK (Alt Styling)": "0.8–1.1s; new layer/prop.",
+            "DEVELOP": "1.0–1.4s; 2 detail beats max.",
+            "LOOP / CTA": "0.6–0.9s.",
+        },
+        "30s": {
+            "HOOK (Statement Frame)": "1.0–1.3s.",
+            "DRAW (Cutaway Detail)": "0.9–1.2s; stitching/hardware.",
+            "COMMIT / PAYOFF #1": "1.5–2.1s.",
+            "SECOND HOOK": "0.9–1.2s.",
+            "DEVELOP A": "1.1–1.5s per move.",
+            "DEVELOP B": "1.1–1.5s; environment read.",
+            "FINAL PAYOFF / LOOP": "0.9–1.2s.",
+        },
     },
     "talking": {
-        "HOOK": "Talking nuance: punch line then move; 0.7–1.2s with breath trims.",
-        "DRAW": "Talking nuance: B-roll overlays 0.8–1.3s; hide jump cuts.",
-        "COMMIT / PAYOFF": "Talking nuance: let takeaway land ~1.4–2.2s if comprehension benefits.",
-        "DEVELOP": "Talking nuance: one tight example 1.0–1.6s; don't spiral.",
+        "12s": {
+            "HOOK (Plain-Speak Claim)": "0.8–1.1s; cut on phrase ends.",
+            "DRAW (Setup in One Line)": "0.7–1.0s; keep fillers trimmed.",
+            "COMMIT / PAYOFF": "1.2–1.7s; overlay receipts ≤0.5s.",
+            "LOOP / CTA": "≤0.7s; clean end breath.",
+        },
+        "22s": {
+            "HOOK (Outcome First)": "0.9–1.2s.",
+            "DRAW (Short Context)": "0.8–1.1s; one surprise fact.",
+            "COMMIT / PAYOFF #1": "1.4–2.0s.",
+            "SECOND HOOK": "0.8–1.1s; new phrasing.",
+            "DEVELOP": "1.0–1.4s; single example.",
+            "LOOP / CTA": "0.6–0.9s.",
+        },
+        "30s": {
+            "HOOK (Punchy Thesis)": "1.0–1.3s.",
+            "DRAW (Angle Boost)": "0.9–1.2s.",
+            "COMMIT / PAYOFF #1": "1.5–2.1s.",
+            "SECOND HOOK": "0.9–1.2s.",
+            "DEVELOP A": "1.1–1.5s.",
+            "DEVELOP B": "1.1–1.5s.",
+            "FINAL PAYOFF / LOOP": "0.9–1.2s.",
+        },
     },
     "dil": {
-        "HOOK": "DIL nuance: mid-action entry; 0.6–1.0s, keep momentum.",
-        "DRAW": "DIL nuance: mini-arc beats 0.9–1.5s; vary textures (hands/ambient/motion).",
-        "COMMIT / PAYOFF": "DIL nuance: micro-resolution can hold 1.2–2.0s if it 'arrives'.",
+        "12s": {
+            "HOOK (Moment in Progress)": "0.7–1.0s; cut on action changes.",
+            "DRAW (What's Next?)": "0.7–1.0s; tease movement.",
+            "COMMIT / PAYOFF": "1.2–1.6s micro-resolution.",
+            "LOOP / CTA": "≤0.7s.",
+        },
+        "22s": {
+            "HOOK (Drop-In)": "0.9–1.2s.",
+            "DRAW (Mini Arc)": "0.8–1.1s.",
+            "COMMIT / PAYOFF #1": "1.4–1.9s.",
+            "SECOND HOOK": "0.8–1.1s.",
+            "DEVELOP": "1.0–1.4s.",
+            "LOOP / CTA": "0.6–0.9s.",
+        },
+        "30s": {
+            "HOOK (Live Snapshot)": "1.0–1.3s.",
+            "DRAW (Tension/Contrast)": "0.9–1.2s.",
+            "COMMIT / PAYOFF #1": "1.5–2.0s.",
+            "SECOND HOOK": "0.9–1.2s.",
+            "DEVELOP A": "1.1–1.5s.",
+            "DEVELOP B": "1.1–1.5s.",
+            "FINAL PAYOFF / LOOP": "0.9–1.2s.",
+        },
     },
     "cook": {
-        "HOOK": "Cook-Ups nuance: show identity sound first; 0.6–1.0s with visible action.",
-        "DRAW": "Cook-Ups nuance: layer/constraint ~0.8–1.2s; keep UI readable.",
-        "COMMIT / PAYOFF": "Cook-Ups nuance: let the 'lock' groove sit 1.5–2.4s if it slaps.",
-        "DEVELOP": "Cook-Ups nuance: fills/mutes/knob rides 0.6–1.0s; align to beat grid.",
-        "FINAL PAYOFF / LOOP": "Cook-Ups nuance: land on a bar boundary; 1.0–1.6s if needed for musical loop.",
+        "12s": {
+            "HOOK (Signature Sound/Move)": "0.7–1.0s; cut on transients.",
+            "DRAW (Layer or Constraint)": "0.6–0.9s; UI/hands ~0.5s.",
+            "COMMIT / PAYOFF": "1.2–1.6s groove lock.",
+            "LOOP / CTA": "≤0.7s.",
+        },
+        "22s": {
+            "HOOK (Instant Identity)": "0.9–1.1s.",
+            "DRAW (What You'll Build)": "0.7–1.0s; context fast.",
+            "COMMIT / PAYOFF #1": "1.4–1.9s.",
+            "SECOND HOOK": "0.8–1.1s.",
+            "DEVELOP": "1.0–1.4s; short fills ≤0.5s.",
+            "LOOP / CTA": "0.6–0.9s.",
+        },
+        "30s": {
+            "HOOK (Immediate Sauce)": "1.0–1.2s.",
+            "DRAW (Set the Game)": "0.9–1.2s.",
+            "COMMIT / PAYOFF #1": "1.5–2.0s.",
+            "SECOND HOOK": "0.9–1.2s.",
+            "DEVELOP A": "1.1–1.5s.",
+            "DEVELOP B": "1.1–1.5s.",
+            "FINAL PAYOFF / LOOP": "0.9–1.2s.",
+        },
     },
 }
 
-# Tier / context nudges (used for master tiers; 'principle' for non-masters)
-_TIER_NUDGE = {
-    "12s": "Tier nudge: bias toward the SHORT end (snappier overall).",
-    "22s": "Tier nudge: stay mid-range; one 1.6–2.0s hold is fine if it 'earns' it.",
-    "30s": "Tier nudge: include one longer 2.0–2.4s payoff; avoid back-to-back long holds.",
-    "principle": "Context: principle timeline—use ranges but favor clarity over speed if a technique needs readability.",
-    "selects": "Context: selects/stringouts—favor faster trims (0.5–1.0s) while reviewing; tag candidates then refine.",
-}
+
+def _lane_tier_from_title(title: str):
+    """Extract lane and tier from timeline title."""
+    t = (title or "").lower()
+    if "money master" in t:
+        return "money", ("12s" if "12s" in t else "22s" if "22s" in t else "30s")
+    if "mv master" in t:
+        return "mv", ("12s" if "12s" in t else "22s" if "22s" in t else "30s")
+    if "fashion master" in t:
+        return "fashion", ("12s" if "12s" in t else "22s" if "22s" in t else "30s")
+    if "th master" in t:
+        return "talking", ("12s" if "12s" in t else "22s" if "22s" in t else "30s")
+    if "dil master" in t:
+        return "dil", ("12s" if "12s" in t else "22s" if "22s" in t else "30s")
+    if "cook-up master" in t:
+        return "cook", ("12s" if "12s" in t else "22s" if "22s" in t else "30s")
+    # For non-master timelines, infer lane from pillar bucket
+    nt = t.replace("—", "-")
+    if nt.startswith("segment -"):
+        return "mv", "30s"
+    if nt.startswith("interview -"):
+        return "talking", "30s"
+    if nt.startswith("look -"):
+        return "fashion", "30s"
+    if nt.startswith("chapter -"):
+        return "dil", "30s"
+    if nt.startswith("section -"):
+        return "cook", "30s"
+    return None, None
 
 
-def _role_normalize(name: str) -> str:
-    """Normalize marker role names to canonical forms."""
-    r = (name or "").upper().strip()
-    return {
-        "COMMIT/PAYOFF": "COMMIT / PAYOFF",
-        "PAYOFF": "COMMIT / PAYOFF",
-        "CTA": "LOOP / CTA",
-        "LOOP": "LOOP / CTA",
-    }.get(r, r)
-
-
-def _append_cut_note(base_note: str, lane: str, role: str, tier: str) -> str:
-    """Append lane- and section-specific edit pacing notes to a marker."""
-    role_key = _role_normalize(role)
-    lines = []
-    if role_key in _CUT_GUIDE_DEFAULT:
-        lines.append(_CUT_GUIDE_DEFAULT[role_key])
-    if lane in _CUT_GUIDE_BY_LANE and role_key in _CUT_GUIDE_BY_LANE[lane]:
-        lines.append(_CUT_GUIDE_BY_LANE[lane][role_key])
-    if tier in _TIER_NUDGE:
-        lines.append(_TIER_NUDGE[tier])
-    if not lines:
-        return base_note
-    if base_note and not base_note.endswith("\n"):
-        base_note += "\n"
-    return base_note + "— " + " ".join(lines)
-
-
-def _enrich_markers_with_cut_notes(markers, lane: str, tier: str):
-    """Enrich all markers with cut-note guidance based on lane and tier."""
+def _enrich_marker_notes(markers, lane, tier):
+    """Add seconds-based cut guidance into each marker's notes."""
+    if not markers or not lane or not tier:
+        return markers
+    rules = PACING_S.get(lane, {}).get(tier, {})
     out = []
-    for m in markers or []:
+    for m in markers:
         m2 = dict(m)
-        base = str(m2.get("notes", "") or "")
-        role = str(m2.get("name", "")).split(" (")[0]
-        m2["notes"] = _append_cut_note(base, lane, role, tier)
+        tip = rules.get(m2.get("name", ""), "")
+        if tip:
+            base = m2.get("notes", "").rstrip()
+            if base:
+                m2["notes"] = f"{base}\n— Cuts: {tip}"
+            else:
+                m2["notes"] = f"Cuts: {tip}"
         out.append(m2)
     return out
 
@@ -1970,26 +2075,28 @@ def _sec_to_frames(sec, fps_float):
     return int(round(sec * fps_float))
 
 
-def _tighten_marker_borders_if_enabled(markers, fps_str):
-    """Tighten durations so each marker ends 1 frame before the next.
-    Default ON; set DEGA_MARKER_TIGHT_BORDERS=0 to disable."""
-    if not markers:
-        return markers
-    env = (os.getenv("DEGA_MARKER_TIGHT_BORDERS") or "").strip().lower()
-    enabled = env not in {"0", "false", "off", "no"}  # default ON
-    if not enabled:
-        return markers
+def _butt_join_markers(markers, fps_str):
+    """Ensure consecutive duration markers visually abut (extend earlier by 1 frame if needed)."""
     try:
         fps = float(fps_str)
     except Exception:
         fps = 29.97
-    ms = [dict(m) for m in sorted(markers, key=lambda x: float(x.get("t", 0.0)))]
+    if not markers:
+        return markers
+    # Work on a copy sorted by time
+    ms = sorted((dict(m) for m in markers), key=lambda x: x.get("t", 0.0))
     for i in range(len(ms) - 1):
         cur, nxt = ms[i], ms[i + 1]
-        cur_start = _sec_to_frames(float(cur.get("t", 0.0)), fps)
-        nxt_start = _sec_to_frames(float(nxt.get("t", 0.0)), fps)
-        tight = max(0, (nxt_start - cur_start) - 1)  # 1-frame visual seam
-        cur["dur"] = tight / fps
+        cur_t = float(cur.get("t", 0.0))
+        cur_d = float(cur.get("dur", 0.0))
+        nxt_t = float(nxt.get("t", 0.0))
+        if cur_d <= 0.0:
+            continue
+        # desired end = cur_t + cur_d
+        gap = nxt_t - (cur_t + cur_d)
+        if gap > 0:
+            # stretch current by min(gap, 1 frame) to close hairline gap without overlap
+            cur["dur"] = cur_d + min(gap, 1.0 / fps)
     return ms
 
 
@@ -2370,15 +2477,18 @@ def seed_principle_markers_across_project(project, mp):
         if not pack:  # masters return []
             continue
 
-        # Infer lane and enrich markers with cut notes & tight borders
-        lane = _infer_lane_from_pillar_or_title("", title)
-        _tier_ctx = (
-            "selects"
-            if ("selects" in title.lower() or "stringouts" in title.lower())
-            else "principle"
-        )
-        markers = _enrich_markers_with_cut_notes(pack, lane, _tier_ctx)
-        markers = _tighten_marker_borders_if_enabled(markers, FPS)
+        # Infer lane and enrich markers with cut notes & butt-join borders
+        lane, tier = _lane_tier_from_title(title)
+        if not lane:
+            lane = _infer_lane_from_pillar_or_title("", title)
+        if not tier:
+            tier = (
+                "selects"
+                if ("selects" in title.lower() or "stringouts" in title.lower())
+                else "30s"
+            )
+        enriched = _enrich_marker_notes(pack, lane, tier)
+        markers = _butt_join_markers(enriched, FPS)
 
         # Set timeline as current for operations
         project.SetCurrentTimeline(tl)
@@ -2386,7 +2496,7 @@ def seed_principle_markers_across_project(project, mp):
         added = add_markers_to_timeline_if_empty(tl, FPS, markers, force=force_env)
         if added > 0:
             log.info(
-                f"   🏷️ Seeded {added} markers on '{title}' (lane={lane}, ctx={_tier_ctx}, force={force_env})"
+                f"   🏷️ Seeded {added} markers on '{title}' (lane={lane}, tier={tier}, force={force_env})"
             )
         elif added == 0 and _count_markers(tl) == 0:
             # empty timeline + no markers -> Resolve quirk: use silent-clip fallback
@@ -2463,8 +2573,8 @@ def main():
         ("Money Master — 30s (IG upper) — 2160×3840 • 29.97p", "30s"),
     ]:
         _raw = LANE_MARKERS["money"][_tier]
-        _paced = _enrich_markers_with_cut_notes(_raw, "money", _tier)
-        _paced = _tighten_marker_borders_if_enabled(_paced, FPS)
+        enriched = _enrich_marker_notes(_raw, "money", _tier)
+        _paced = _butt_join_markers(enriched, FPS)
         create_vertical_timeline_unique(
             mp, proj, money_folder, _name, WIDTH, HEIGHT, FPS, stats, markers=_paced
         )
@@ -2497,21 +2607,24 @@ def main():
                 # Pull the appropriate principle pack (if any), then enrich & tighten
                 _pm = get_principle_markers_for_title(title)
                 if _pm:
-                    # Determine context tier for enrichment: use 'principle' by default,
-                    # but nudge 'selects' timelines with a different context line.
-                    _tier_ctx = (
-                        "selects"
-                        if ("selects" in title.lower() or "stringouts" in title.lower())
-                        else "principle"
-                    )
-                    _pm = _enrich_markers_with_cut_notes(_pm, lane_guess, _tier_ctx)
-                    _pm = _tighten_marker_borders_if_enabled(_pm, FPS)
+                    # Use v4.7 lane/tier system
+                    lane, tier = _lane_tier_from_title(title)
+                    if not lane:
+                        lane = lane_guess
+                    if not tier:
+                        tier = (
+                            "selects"
+                            if ("selects" in title.lower() or "stringouts" in title.lower())
+                            else "30s"
+                        )
+                    enriched = _enrich_marker_notes(_pm, lane, tier)
+                    _pm = _butt_join_markers(enriched, FPS)
                     log.debug(
-                        "   🏷️  Timeline: %s → %d markers (lane=%s, ctx=%s)",
+                        "   🏷️  Timeline: %s → %d markers (lane=%s, tier=%s)",
                         title,
                         len(_pm),
-                        lane_guess,
-                        _tier_ctx,
+                        lane,
+                        tier,
                     )
 
                 create_vertical_timeline_unique(
@@ -2568,8 +2681,8 @@ def main():
                     tier_keys = ["12s", "22s", "30s"]
                     for name, tier in zip(names, tier_keys, strict=False):
                         raw = LANE_MARKERS[lane_key][tier]
-                        paced = _enrich_markers_with_cut_notes(raw, lane_key, tier)
-                        paced = _tighten_marker_borders_if_enabled(paced, FPS)
+                        enriched = _enrich_marker_notes(raw, lane_key, tier)
+                        paced = _butt_join_markers(enriched, FPS)
                         create_vertical_timeline_unique(
                             mp,
                             proj,
