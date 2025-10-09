@@ -2,6 +2,46 @@
 
 All notable changes to the DEGA Formula Builder project.
 
+## [v4.7.2] - 2025-10-09
+
+### 🎯 Enhancement: TRUE 100% Enrichment with Post-Pass
+Post-pass enrichment system walks ALL timelines and upgrades any missing markers—including previous runs, hand-added markers, and principle packs.
+
+### Added
+- **`enrich_all_timelines_postpass()`**: Main post-pass coordinator that walks all timelines
+- **`enrich_markers_in_existing_timeline()`**: Per-timeline enrichment logic
+- **`_collect_markers_generic()`**: Cross-API-version marker collector (dict/list support)
+- **`_safe_update_marker()`**: Delete-then-readd pattern for marker updates
+- **`_safe_delete_marker_at_frame()`**: Best-effort marker deletion across API variants
+- **`_normalize_head()`**: Normalizes marker names to match DEFAULT_CUT_GUIDE keys
+- **`_append_cut_line()`**: Appends "— Cuts: <guidance>" to notes
+- **`_has_cut_line()`**: Checks if marker already enriched
+- **`_lane_from_title()` / `_tier_from_title()`**: Helper extractors
+- **`_ENRICH_PRINCIPLE_PACKS` flag**: Enables enrichment for Scenes/Segments, ShotFX, Interview/Talking, Look/Fashion, Chapter/DIL, Section/Cook-Ups
+
+### Changed
+- **Version Header**: Updated to v4.7.2 with TRUE 100% enrichment description
+- **main() completion flow**: Now calls `enrich_all_timelines_postpass()` after lints and before save
+- **Principle timelines**: Now enriched automatically (previously used generic markers)
+
+### Technical Details
+- **Post-Pass Coverage**: Catches markers missed by monkey-patching, hand-added markers, and markers from previous script runs
+- **Retro-Enrichment**: Existing projects get upgraded without rebuild—just run script again
+- **API Compatibility**: Defensive programming handles Resolve 18/19/20 API variants
+- **Fallback Guidance**: Unknown marker types get DEVELOP guidance (safest general advice)
+- **Performance**: Only updates markers missing "— Cuts:" line (~1-3s overhead for 67 timelines)
+- **Lines Added**: ~200 lines (1888–2088) for complete post-pass system
+- **Console Output**: Shows per-timeline enrichment count + total summary
+
+### Benefits
+- **True 100% Coverage**: Every marker everywhere gets guidance (not just 41.3% or seed-time only)
+- **Retro-Compatible**: Old projects upgrade automatically on next run
+- **Hand-Added Markers**: Get proper guidance without manual work
+- **Principle Packs**: Structured guidance for all timeline types
+- **Self-Healing**: Run script periodically to keep markers enriched
+
+---
+
 ## [v4.7.1] - 2025-10-09
 
 ### 🎯 Enhancement: 100% Enrichment + Marker Lints

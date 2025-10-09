@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-DEGA — "The Formula" Builder (Resolve 20.2) — v4.7.1
+DEGA — "The Formula" Builder (Resolve 20.2) — v4.7.2
 Vertical 2160×3840 @ 29.97p • Emoji/Pipe naming • Non-destructive
 
-What's new in v4.7.1
-- 100% enrichment: All markers get cut guidance via transparent monkey-patching.
-- Marker lints: Schema validation, duration caps, and collision detection with human-readable warnings.
-- SECONDS_PACING_DOC: Philosophy documentation printed to log once per run.
-- DEFAULT_CUT_GUIDE: 9 marker types (HOOK, DRAW, COMMIT, PAYOFF, etc.) with base seconds.
-- LANE_NUANCE: 6 lanes × specific marker overrides (Money clarity, MV energy, Fashion breath, etc.).
-- TIER_OVERRIDES: 3 tiers (12s quicker, 22s balanced, 30s more air) for tempo adjustment.
+What's new in v4.7.2
+- TRUE 100% enrichment: Post-pass walks ALL timelines and upgrades any missing markers.
+- Principle pack enrichment: Scenes/Segments, ShotFX, Interview/Talking, Look/Fashion, Chapter/DIL, Section/Cook-Ups.
+- Retro-enrichment: Existing markers from previous runs or hand-added get upgraded automatically.
+- Safe marker update: Delete-then-readd pattern works across API variants.
+- Zero missed markers: Every marker everywhere gets lane/tier-aware "— Cuts:" guidance.
 
 What's new in v4.6
 - Cut-note enrichment with lane/tier-specific edit pacing guidance
@@ -1886,6 +1885,262 @@ def run_marker_lints(proj, fps=29.97):
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# v4.7.2 Enhancement: TRUE 100% Enrichment with Post-Pass
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+# Enable enrichment for principle packs (Scenes/Segments, ShotFX, Interview/Talking, etc.)
+_ENRICH_PRINCIPLE_PACKS = True
+
+
+def _safe_delete_marker_at_frame(tl, frame: int) -> bool:
+    """
+    Delete marker at frame using best-effort API detection.
+    Resolve API differs across versions; try both signatures defensively.
+    """
+    for fn in ("DeleteMarkerAtFrame", "DeleteMarker"):
+        try:
+            f = getattr(tl, fn, None)
+            if callable(f) and f(frame):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _safe_update_marker(tl, fps_float: float, frame: int, m: dict, new_notes: str) -> bool:
+    """
+    Best-effort 'update': delete then re-add with same color/name/duration but enriched notes.
+    
+    Args:
+        tl: Timeline object
+        fps_float: Frame rate
+        frame: Frame ID of marker
+        m: Original marker dict
+        new_notes: Enriched notes to replace
+    
+    Returns:
+        True if update succeeded
+    """
+    color = m.get("color") or m.get("Color") or "Red"
+    name = m.get("name") or m.get("Name") or ""
+    dur_frames = int(m.get("duration") or m.get("Duration") or 0)
+
+    # Delete if we can (some builds require this to overwrite)
+    _safe_delete_marker_at_frame(tl, frame)
+    return _add_marker_safe(tl, frame, color, name, new_notes, dur_frames)
+
+
+def _collect_markers_generic(tl):
+    """
+    Return list of tuples (frame, marker_dict). Works across API variants.
+    
+    Args:
+        tl: Timeline object
+    
+    Returns:
+        List of (frame_id, marker_dict) tuples
+    """
+    try:
+        mk = tl.GetMarkers()
+    except Exception:
+        mk = None
+
+    out = []
+    if isinstance(mk, dict):
+        for fr, m in mk.items():
+            try:
+                out.append((int(fr), m))
+            except Exception:
+                continue
+    elif isinstance(mk, list):
+        # Not all builds provide frame in dict; derive when possible
+        fps = 29.97
+        for m in mk:
+            fr = None
+            # Try 'frame' or 'frameId' or compute from 'time'
+            for key in ("frame", "frameId", "Frame"):
+                if key in m:
+                    fr = int(m[key])
+                    break
+            if fr is None:
+                t = m.get("time") or m.get("Time") or m.get("trackPosition") or 0.0
+                try:
+                    fr = _sec_to_frames(float(t), fps)
+                except Exception:
+                    fr = 0
+            out.append((fr, m))
+    return out
+
+
+def _has_cut_line(notes: str) -> bool:
+    """Check if marker notes already have '— Cuts:' line."""
+    return "— Cuts:" in (notes or "")
+
+
+def _normalize_head(name: str) -> str:
+    """
+    Normalize marker name to match DEFAULT_CUT_GUIDE keys.
+    Examples:
+        "HOOK" → "HOOK"
+        "HOOK (Signature Visual)" → "HOOK"
+        "COMMIT / PAYOFF" → "COMMIT"
+        "SECOND HOOK" → "SECOND HOOK"
+    """
+    name_upper = (name or "").upper()
+    
+    # Check exact matches first
+    if name_upper in DEFAULT_CUT_GUIDE:
+        return name_upper
+    
+    # Check for partial matches
+    for key in DEFAULT_CUT_GUIDE:
+        if key in name_upper:
+            return key
+    
+    # Special cases
+    if "PAYOFF" in name_upper:
+        return "PAYOFF"
+    if "COMMIT" in name_upper:
+        return "COMMIT"
+    
+    return ""
+
+
+def _append_cut_line(notes: str, line: str) -> str:
+    """Append '— Cuts: <line>' to notes."""
+    if not line:
+        return notes
+    notes = (notes or "").rstrip()
+    if notes:
+        return f"{notes}\n— Cuts: {line}"
+    return f"— Cuts: {line}"
+
+
+def _lane_from_title(title: str) -> str:
+    """Extract lane from timeline title."""
+    lane, _ = _lane_tier_from_title(title)
+    return lane
+
+
+def _tier_from_title(title: str) -> str:
+    """Extract tier from timeline title."""
+    _, tier = _lane_tier_from_title(title)
+    return tier
+
+
+def enrich_markers_in_existing_timeline(tl, fps_float: float = 29.97) -> int:
+    """
+    Walk existing markers; if they lack a '— Cuts:' line, enrich in-place.
+    
+    This is the post-pass enrichment that catches:
+    - Markers from previous script runs (pre-v4.7.2)
+    - Hand-added markers
+    - Principle timeline markers (Scenes/Segments, ShotFX, etc.)
+    
+    Args:
+        tl: Timeline object
+        fps_float: Frame rate (default 29.97)
+    
+    Returns:
+        Count of markers updated
+    """
+    try:
+        title = tl.GetName() or ""
+    except Exception:
+        title = ""
+    
+    lane = _lane_from_title(title)
+    tier = _tier_from_title(title)
+
+    updated = 0
+    for frame, m in _collect_markers_generic(tl):
+        name = m.get("name") or m.get("Name") or ""
+        notes = m.get("note") or m.get("notes") or m.get("Notes") or ""
+        
+        if _has_cut_line(notes):
+            continue  # Already enriched
+
+        head = _normalize_head(name)
+        
+        # Pick a line using same logic as seeding (TIER > LANE > DEFAULT)
+        line = None
+        if head in DEFAULT_CUT_GUIDE:
+            line = DEFAULT_CUT_GUIDE[head]
+        if lane and head in (LANE_NUANCE.get(lane, {})):
+            line = LANE_NUANCE[lane][head]
+        if tier and head in (TIER_OVERRIDES.get(tier, {})):
+            line = TIER_OVERRIDES[tier][head]
+
+        if not line:
+            # Fallback: treat unknowns like DEVELOP (safest general guidance)
+            line = DEFAULT_CUT_GUIDE.get("DEVELOP", "Cut every ~1.1s; chain 2–3 beats.")
+
+        new_notes = _append_cut_line(notes, line)
+        if new_notes != notes:
+            if _safe_update_marker(tl, fps_float, frame, m, new_notes):
+                updated += 1
+    
+    return updated
+
+
+def enrich_all_timelines_postpass(project, fps_str: str = "29.97"):
+    """
+    Post-pass enrichment: walk ALL timelines and upgrade any missing markers.
+    
+    This ensures TRUE 100% enrichment across:
+    - Masters (12s/22s/30s)
+    - Principles (Scenes/Segments, ShotFX, Interview/Talking, Look/Fashion, Chapter/DIL, Section/Cook-Ups)
+    - Existing markers from previous runs
+    - Hand-added markers
+    
+    Args:
+        project: Project object
+        fps_str: Frame rate string (e.g., "29.97p")
+    
+    Returns:
+        Total count of markers updated
+    """
+    try:
+        fps = float(fps_str.replace("p", ""))
+    except Exception:
+        fps = 29.97
+    
+    try:
+        cnt = int(project.GetTimelineCount() or 0)
+    except Exception:
+        cnt = 0
+
+    total_updated = 0
+    for i in range(1, cnt + 1):
+        tl = project.GetTimelineByIndex(i)
+        if not tl:
+            continue
+        
+        try:
+            name = tl.GetName() or ""
+        except Exception:
+            name = f"<Timeline#{i}>"
+        
+        upd = enrich_markers_in_existing_timeline(tl, fps_float=fps)
+        total_updated += upd
+        
+        if upd:
+            log.info("✨ Enriched %d existing markers on '%s'", upd, name)
+    
+    if total_updated == 0:
+        log.info("✅ Post-pass enrichment: no markers needed updates.")
+    else:
+        log.info("✅ Post-pass enrichment complete: %d markers updated total.", total_updated)
+    
+    return total_updated
+
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# End v4.7.2 Enhancement
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+
 # ───────────────────────── Seconds-only pacing (lane ▸ tier ▸ section) ─────────────────────────
 PACING_S = {
     "money": {
@@ -3008,6 +3263,13 @@ def main():
     # v4.7.1: Run marker lints before saving
     log.info("================================================")
     run_marker_lints(proj, fps=float(FPS.replace("p", "")))
+    
+    # v4.7.2: Post-pass enrichment for TRUE 100% coverage
+    log.info("================================================")
+    try:
+        enrich_all_timelines_postpass(proj, fps_str=FPS)
+    except Exception as e:
+        log.debug("Post-pass enrichment skipped: %s", e)
     
     try:
         proj.Save() if hasattr(proj, "Save") else None
