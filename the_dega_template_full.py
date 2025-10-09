@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """
-DEGA — "The Formula" Builder (Resolve 20.2) — v4.5
+DEGA — "The Formula" Builder (Resolve 20.2) — v4.6
 Vertical 2160×3840 @ 29.97p • Emoji/Pipe naming • Non-destructive
+
+What's new in v4.6
+- Cut-note enrichment: Every marker now includes lane-specific and tier-specific
+  edit pacing guidance (shot duration ranges, cutting strategies) appended to notes.
+- Tight marker borders: Markers end 1 frame before the next by default for gapless
+  color bands (disable with DEGA_MARKER_TIGHT_BORDERS=0).
+- Applied to ALL timelines: Money Masters, pillar masters (MV, Fashion, TH, DIL, Cook-Ups),
+  principle timelines (Scenes/Segments, ShotFX, Selects/Stringouts, etc.).
 
 What's new in v4.5
 - Tiered marker templates (12s / 22s / 30s) added natively to *every* lane's Master Build:
@@ -49,7 +57,7 @@ def setup_logger(name="dega_builder", level=logging.INFO):
     logger.addHandler(ch)
     logger.addHandler(fh)
     logger.propagate = False
-    logger.info("🚀 DEGA Formula Builder v4.5 starting…")
+    logger.info("🚀 DEGA Formula Builder v4.6 starting…")
     logger.info("📝 Log file: %s", log_path)
     return logger
 
@@ -89,7 +97,9 @@ def get_resolve():
             return r
     except Exception as e:
         log.error(f"❌ DaVinciResolveScript failed: {e}")
-    log.error("❌ Could not acquire Resolve API. Run from Resolve (Workspace ▸ Scripts).")
+    log.error(
+        "❌ Could not acquire Resolve API. Run from Resolve (Workspace ▸ Scripts)."
+    )
     sys.exit(1)
 
 
@@ -145,7 +155,13 @@ AUDIO_TRACKS = [
 # ───────────────────────── Marker templates ─────────────────────────
 # Helper for concise marker dicts
 def _mm(when, color, name, dur, notes):
-    return {"t": float(when), "color": color, "name": name, "dur": float(dur), "notes": notes}
+    return {
+        "t": float(when),
+        "color": color,
+        "name": name,
+        "dur": float(dur),
+        "notes": notes,
+    }
 
 
 # Color support/fallbacks per Resolve marker API variety
@@ -213,7 +229,13 @@ MARKERS_12 = [
     ),
 ]
 MARKERS_22 = [
-    _mm(0.000, "Red", "HOOK", 3.0, "Range 0–3s. Punchy premise stated plainly; no hedging."),
+    _mm(
+        0.000,
+        "Red",
+        "HOOK",
+        3.0,
+        "Range 0–3s. Punchy premise stated plainly; no hedging.",
+    ),
     _mm(
         3.000,
         "Orange",
@@ -242,9 +264,19 @@ MARKERS_22 = [
         3.0,
         "Range 2–4s. Re-hook with a sharper angle or upside; avoid redundancy.",
     ),
-    _mm(13.500, "Magenta", "INTERRUPT #2", 0.0, "Quick flip after second hook to prevent plateau."),
     _mm(
-        15.000, "Purple", "DEVELOP", 7.0, "Range 6–8s. Stack 1–2 supporting beats; no rabbit holes."
+        13.500,
+        "Magenta",
+        "INTERRUPT #2",
+        0.0,
+        "Quick flip after second hook to prevent plateau.",
+    ),
+    _mm(
+        15.000,
+        "Purple",
+        "DEVELOP",
+        7.0,
+        "Range 6–8s. Stack 1–2 supporting beats; no rabbit holes.",
     ),
     _mm(18.500, "Magenta", "INTERRUPT #3", 0.0, "Penultimate jolt to prime the close."),
     _mm(
@@ -256,7 +288,13 @@ MARKERS_22 = [
     ),
 ]
 MARKERS_30 = [
-    _mm(0.000, "Red", "HOOK", 3.0, "Range 0–3s. Plain-speak promise; strong visual identity."),
+    _mm(
+        0.000,
+        "Red",
+        "HOOK",
+        3.0,
+        "Range 0–3s. Plain-speak promise; strong visual identity.",
+    ),
     _mm(
         3.000,
         "Orange",
@@ -265,7 +303,9 @@ MARKERS_30 = [
         "Range 4–6s. Elevate intrigue via contrast/constraint/benefit.",
     ),
     _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "Micro reset to avoid 6–10s slump."),
-    _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. Hard clarity moment #1."),
+    _mm(
+        8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. Hard clarity moment #1."
+    ),
     _mm(
         12.000,
         "Blue",
@@ -273,12 +313,24 @@ MARKERS_30 = [
         3.0,
         "Range 2–4s. Alternate entry point for scrollers; new phrasing.",
     ),
-    _mm(13.500, "Magenta", "INTERRUPT #2", 0.0, "Quick subversion; keep rhythm varied."),
     _mm(
-        15.000, "Purple", "DEVELOP A", 7.0, "Range 6–8s. Expand with one concise supporting angle."
+        13.500, "Magenta", "INTERRUPT #2", 0.0, "Quick subversion; keep rhythm varied."
+    ),
+    _mm(
+        15.000,
+        "Purple",
+        "DEVELOP A",
+        7.0,
+        "Range 6–8s. Expand with one concise supporting angle.",
     ),
     _mm(20.000, "Magenta", "INTERRUPT #3", 0.0, "Reset cadence before last stretch."),
-    _mm(22.000, "Purple", "DEVELOP B", 6.0, "Range 5–7s. Second support; avoid duplication."),
+    _mm(
+        22.000,
+        "Purple",
+        "DEVELOP B",
+        6.0,
+        "Range 5–7s. Second support; avoid duplication.",
+    ),
     _mm(26.000, "Magenta", "INTERRUPT #4", 0.0, "Final micro jolt before close."),
     _mm(
         28.000,
@@ -357,7 +409,9 @@ LANE_MARKERS = {
                 5.0,
                 "Range 4–6s. Switch to fabric, accessories, or motion to add dimension.",
             ),
-            _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "≤0.7s. Quick angle/tempo flip."),
+            _mm(
+                6.000, "Magenta", "INTERRUPT #1", 0.0, "≤0.7s. Quick angle/tempo flip."
+            ),
             _mm(
                 8.000,
                 "Green",
@@ -388,8 +442,20 @@ LANE_MARKERS = {
                 5.0,
                 "Range 4–6s. Fabric motion or accessory interaction.",
             ),
-            _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "≤0.7s. Angle/location micro switch."),
-            _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. Full outfit clarity."),
+            _mm(
+                6.000,
+                "Magenta",
+                "INTERRUPT #1",
+                0.0,
+                "≤0.7s. Angle/location micro switch.",
+            ),
+            _mm(
+                8.000,
+                "Green",
+                "COMMIT / PAYOFF #1",
+                4.0,
+                "Range 3–5s. Full outfit clarity.",
+            ),
             _mm(
                 12.000,
                 "Blue",
@@ -404,7 +470,13 @@ LANE_MARKERS = {
                 7.0,
                 "Range 6–8s. 1–2 beats: close-ups, pocket pulls, hem, shoe detail.",
             ),
-            _mm(21.300, "Yellow", "LOOP / CTA", 0.7, "Range 0.5–1.2s. Loopable walk-by or glance."),
+            _mm(
+                21.300,
+                "Yellow",
+                "LOOP / CTA",
+                0.7,
+                "Range 0.5–1.2s. Loopable walk-by or glance.",
+            ),
         ],
         "30s": [
             _mm(
@@ -422,8 +494,20 @@ LANE_MARKERS = {
                 "Range 4–6s. Textures, stitching, hardware.",
             ),
             _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "Micro jolt."),
-            _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. Head-to-toe moment."),
-            _mm(12.000, "Blue", "SECOND HOOK", 3.0, "Range 2–4s. Alternate palette/prop."),
+            _mm(
+                8.000,
+                "Green",
+                "COMMIT / PAYOFF #1",
+                4.0,
+                "Range 3–5s. Head-to-toe moment.",
+            ),
+            _mm(
+                12.000,
+                "Blue",
+                "SECOND HOOK",
+                3.0,
+                "Range 2–4s. Alternate palette/prop.",
+            ),
             _mm(
                 15.000,
                 "Purple",
@@ -431,7 +515,13 @@ LANE_MARKERS = {
                 7.0,
                 "Range 6–8s. Movement sequence: walk, turn, sit.",
             ),
-            _mm(22.000, "Purple", "DEVELOP B", 6.0, "Range 5–7s. Environment integration."),
+            _mm(
+                22.000,
+                "Purple",
+                "DEVELOP B",
+                6.0,
+                "Range 5–7s. Environment integration.",
+            ),
             _mm(
                 28.000,
                 "Yellow",
@@ -471,7 +561,13 @@ LANE_MARKERS = {
                 4.0,
                 "Range 3–5s. The clear takeaway or micro demo.",
             ),
-            _mm(11.600, "Yellow", "LOOP / CTA", 0.4, "Range 0.3–1.0s. Frictionless close."),
+            _mm(
+                11.600,
+                "Yellow",
+                "LOOP / CTA",
+                0.4,
+                "Range 0.3–1.0s. Frictionless close.",
+            ),
         ],
         "22s": [
             _mm(
@@ -495,7 +591,13 @@ LANE_MARKERS = {
                 0.0,
                 "≤0.7s. Pattern break: quick insert or angle swap.",
             ),
-            _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. First clear point."),
+            _mm(
+                8.000,
+                "Green",
+                "COMMIT / PAYOFF #1",
+                4.0,
+                "Range 3–5s. First clear point.",
+            ),
             _mm(
                 12.000,
                 "Blue",
@@ -522,11 +624,37 @@ LANE_MARKERS = {
                 "Range 4–6s. Sharpen tension without jargon.",
             ),
             _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "Micro reset."),
-            _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. Clear, specific point."),
-            _mm(12.000, "Blue", "SECOND HOOK", 3.0, "Range 2–4s. New phrasing for late arrivals."),
-            _mm(15.000, "Purple", "DEVELOP A", 7.0, "Range 6–8s. Example or tiny case."),
-            _mm(22.000, "Purple", "DEVELOP B", 6.0, "Range 5–7s. Short application/implication."),
-            _mm(28.000, "Yellow", "FINAL PAYOFF / LOOP", 2.0, "Range 1.5–3.0s. Tight loop or ask."),
+            _mm(
+                8.000,
+                "Green",
+                "COMMIT / PAYOFF #1",
+                4.0,
+                "Range 3–5s. Clear, specific point.",
+            ),
+            _mm(
+                12.000,
+                "Blue",
+                "SECOND HOOK",
+                3.0,
+                "Range 2–4s. New phrasing for late arrivals.",
+            ),
+            _mm(
+                15.000, "Purple", "DEVELOP A", 7.0, "Range 6–8s. Example or tiny case."
+            ),
+            _mm(
+                22.000,
+                "Purple",
+                "DEVELOP B",
+                6.0,
+                "Range 5–7s. Short application/implication.",
+            ),
+            _mm(
+                28.000,
+                "Yellow",
+                "FINAL PAYOFF / LOOP",
+                2.0,
+                "Range 1.5–3.0s. Tight loop or ask.",
+            ),
         ],
     },
     "dil": {  # Day in the Life
@@ -563,15 +691,45 @@ LANE_MARKERS = {
         ],
         "22s": [
             _mm(0.000, "Red", "HOOK (Drop-In)", 3.0, "Range 0–3s. Start mid-action."),
-            _mm(3.000, "Orange", "DRAW (Mini Arc)", 5.0, "Range 4–6s. Set tiny objective/change."),
+            _mm(
+                3.000,
+                "Orange",
+                "DRAW (Mini Arc)",
+                5.0,
+                "Range 4–6s. Set tiny objective/change.",
+            ),
             _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "≤0.7s. Micro reset."),
-            _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. Hit a checkpoint."),
+            _mm(
+                8.000,
+                "Green",
+                "COMMIT / PAYOFF #1",
+                4.0,
+                "Range 3–5s. Hit a checkpoint.",
+            ),
             _mm(12.000, "Blue", "SECOND HOOK", 3.0, "Range 2–4s. New micro-goal."),
-            _mm(15.000, "Purple", "DEVELOP", 7.0, "Range 6–8s. Texture beats (ambient, details)."),
-            _mm(21.300, "Yellow", "LOOP / CTA", 0.7, "Range 0.5–1.2s. End in motion for loop."),
+            _mm(
+                15.000,
+                "Purple",
+                "DEVELOP",
+                7.0,
+                "Range 6–8s. Texture beats (ambient, details).",
+            ),
+            _mm(
+                21.300,
+                "Yellow",
+                "LOOP / CTA",
+                0.7,
+                "Range 0.5–1.2s. End in motion for loop.",
+            ),
         ],
         "30s": [
-            _mm(0.000, "Red", "HOOK (Live Snapshot)", 3.0, "Range 0–3s. Immediate immersion."),
+            _mm(
+                0.000,
+                "Red",
+                "HOOK (Live Snapshot)",
+                3.0,
+                "Range 0–3s. Immediate immersion.",
+            ),
             _mm(
                 3.000,
                 "Orange",
@@ -588,10 +746,22 @@ LANE_MARKERS = {
                 "Range 3–5s. Satisfy the first micro-goal.",
             ),
             _mm(12.000, "Blue", "SECOND HOOK", 3.0, "Range 2–4s. Lure late scrollers."),
-            _mm(15.000, "Purple", "DEVELOP A", 7.0, "Range 6–8s. Environment & texture."),
-            _mm(22.000, "Purple", "DEVELOP B", 6.0, "Range 5–7s. Human beat or detail set."),
             _mm(
-                28.000, "Yellow", "FINAL PAYOFF / LOOP", 2.0, "Range 1.5–3.0s. Loopable exit/enter."
+                15.000, "Purple", "DEVELOP A", 7.0, "Range 6–8s. Environment & texture."
+            ),
+            _mm(
+                22.000,
+                "Purple",
+                "DEVELOP B",
+                6.0,
+                "Range 5–7s. Human beat or detail set.",
+            ),
+            _mm(
+                28.000,
+                "Yellow",
+                "FINAL PAYOFF / LOOP",
+                2.0,
+                "Range 1.5–3.0s. Loopable exit/enter.",
             ),
         ],
     },
@@ -611,7 +781,13 @@ LANE_MARKERS = {
                 5.0,
                 "Range 4–6s. Tease a layer you'll add or a flip you'll attempt.",
             ),
-            _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "≤0.7s. Micro switch to screen/overhead."),
+            _mm(
+                6.000,
+                "Magenta",
+                "INTERRUPT #1",
+                0.0,
+                "≤0.7s. Micro switch to screen/overhead.",
+            ),
             _mm(
                 8.000,
                 "Green",
@@ -619,7 +795,13 @@ LANE_MARKERS = {
                 4.0,
                 "Range 3–5s. Small but satisfying musical 'click' (layer locks, groove snaps).",
             ),
-            _mm(11.600, "Yellow", "LOOP / CTA", 0.4, "Range 0.3–1.0s. Seamless loop or tiny ask."),
+            _mm(
+                11.600,
+                "Yellow",
+                "LOOP / CTA",
+                0.4,
+                "Range 0.3–1.0s. Seamless loop or tiny ask.",
+            ),
         ],
         "22s": [
             _mm(
@@ -637,7 +819,13 @@ LANE_MARKERS = {
                 "Range 4–6s. Promise the flip: key/tempo/session context (fast).",
             ),
             _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "≤0.7s. Angle/UI micro cut."),
-            _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. First groove lock."),
+            _mm(
+                8.000,
+                "Green",
+                "COMMIT / PAYOFF #1",
+                4.0,
+                "Range 3–5s. First groove lock.",
+            ),
             _mm(12.000, "Blue", "SECOND HOOK", 3.0, "Range 2–4s. Catchier motif/turn."),
             _mm(
                 15.000,
@@ -664,11 +852,29 @@ LANE_MARKERS = {
                 "Range 4–6s. 'Here's the flip' in one line.",
             ),
             _mm(6.000, "Magenta", "INTERRUPT #1", 0.0, "Micro cut/angle."),
-            _mm(8.000, "Green", "COMMIT / PAYOFF #1", 4.0, "Range 3–5s. First lock moment."),
+            _mm(
+                8.000,
+                "Green",
+                "COMMIT / PAYOFF #1",
+                4.0,
+                "Range 3–5s. First lock moment.",
+            ),
             _mm(12.000, "Blue", "SECOND HOOK", 3.0, "Range 2–4s. Stronger motif."),
             _mm(15.000, "Purple", "DEVELOP A", 7.0, "Range 6–8s. Arrange mini-arc."),
-            _mm(22.000, "Purple", "DEVELOP B", 6.0, "Range 5–7s. Short performance burst."),
-            _mm(28.000, "Yellow", "FINAL PAYOFF / LOOP", 2.0, "Range 1.5–3.0s. Loop land."),
+            _mm(
+                22.000,
+                "Purple",
+                "DEVELOP B",
+                6.0,
+                "Range 5–7s. Short performance burst.",
+            ),
+            _mm(
+                28.000,
+                "Yellow",
+                "FINAL PAYOFF / LOOP",
+                2.0,
+                "Range 1.5–3.0s. Loop land.",
+            ),
         ],
     },
 }
@@ -684,6 +890,7 @@ def _mp(t, color, name, notes, dur=0.0):
 
 
 # ───────────────────────── ShotFX variant marker packs ─────────────────────────
+
 
 def _shotfx_variant_for_title(norm_title: str):
     """Detect which ShotFX variant to use based on timeline name."""
@@ -706,108 +913,248 @@ def _shotfx_variant_for_title(norm_title: str):
 SHOTFX_SPECIFIC = {
     # Music-video clone / hallway clone, etc.
     "clone": [
-        _mp(0.0, "Orange", "Prep / Plates",
-            "Lock-off or perfectly repeatable move. Shoot a clean plate. Keep exposure/WB fixed."),
-        _mp(1.0, "Blue", "Mask strategy",
-            "Plan overlap: decide who passes in front. Soft 6–10px feather; avoid hair edges on seams."),
-        _mp(2.0, "Green", "Parallax sanity",
-            "If handheld, stabilize BOTH plates before masking. Align on hard verticals (door frames)."),
-        _mp(3.0, "Pink", "Seam check (Difference)",
-            "Use a Difference/Blend preview to locate seam crawl; nudge mask or warp to match."),
-        _mp(4.0, "Cyan", "Shadows / occlusion",
-            "Ensure correct layer order where subjects cross; paint/contact-shadow fix if needed."),
-        _mp(5.0, "Yellow", "Grain / blur match",
-            "Match grain and motion blur between plates; add grain last so edges integrate."),
-        _mp(6.0, "Purple", "Continuity glance",
-            "Watch hands/feet for pops at the seam during moves; micro-transform if necessary."),
+        _mp(
+            0.0,
+            "Orange",
+            "Prep / Plates",
+            "Lock-off or perfectly repeatable move. Shoot a clean plate. Keep exposure/WB fixed.",
+        ),
+        _mp(
+            1.0,
+            "Blue",
+            "Mask strategy",
+            "Plan overlap: decide who passes in front. Soft 6–10px feather; avoid hair edges on seams.",
+        ),
+        _mp(
+            2.0,
+            "Green",
+            "Parallax sanity",
+            "If handheld, stabilize BOTH plates before masking. Align on hard verticals (door frames).",
+        ),
+        _mp(
+            3.0,
+            "Pink",
+            "Seam check (Difference)",
+            "Use a Difference/Blend preview to locate seam crawl; nudge mask or warp to match.",
+        ),
+        _mp(
+            4.0,
+            "Cyan",
+            "Shadows / occlusion",
+            "Ensure correct layer order where subjects cross; paint/contact-shadow fix if needed.",
+        ),
+        _mp(
+            5.0,
+            "Yellow",
+            "Grain / blur match",
+            "Match grain and motion blur between plates; add grain last so edges integrate.",
+        ),
+        _mp(
+            6.0,
+            "Purple",
+            "Continuity glance",
+            "Watch hands/feet for pops at the seam during moves; micro-transform if necessary.",
+        ),
         _mp(299.0, "Blue", "⏱ 5min anchor", ""),
     ],
-
     # Beauty cleanup using a clean plate or adjacent frame
     "clean_plate": [
-        _mp(0.0, "Orange", "Choose source",
-            "Prefer adjacent frames over stills to keep texture; avoid plastic look."),
-        _mp(1.0, "Blue", "Track first",
-            "Corner/planar or point track the patch area; stabilize into a working space, then composite."),
-        _mp(2.0, "Green", "Patch blend",
-            "Use soft, irregular masks; bias feather into patch. Match local contrast, not global."),
-        _mp(3.0, "Pink", "Skin texture",
-            "Do not blur: borrow texture from nearby skin; keep pores. Add tiny monochrome grain if needed."),
-        _mp(4.0, "Cyan", "Temporal sanity",
-            "If the head moves, use a short temporal patch (few frames) rather than one still."),
-        _mp(5.0, "Yellow", "Color/Specular",
-            "Match micro highlights; reduce spec hotspots with gentle curve, not blur."),
+        _mp(
+            0.0,
+            "Orange",
+            "Choose source",
+            "Prefer adjacent frames over stills to keep texture; avoid plastic look.",
+        ),
+        _mp(
+            1.0,
+            "Blue",
+            "Track first",
+            "Corner/planar or point track the patch area; stabilize into a working space, then composite.",
+        ),
+        _mp(
+            2.0,
+            "Green",
+            "Patch blend",
+            "Use soft, irregular masks; bias feather into patch. Match local contrast, not global.",
+        ),
+        _mp(
+            3.0,
+            "Pink",
+            "Skin texture",
+            "Do not blur: borrow texture from nearby skin; keep pores. Add tiny monochrome grain if needed.",
+        ),
+        _mp(
+            4.0,
+            "Cyan",
+            "Temporal sanity",
+            "If the head moves, use a short temporal patch (few frames) rather than one still.",
+        ),
+        _mp(
+            5.0,
+            "Yellow",
+            "Color/Specular",
+            "Match micro highlights; reduce spec hotspots with gentle curve, not blur.",
+        ),
         _mp(299.0, "Blue", "⏱ 5min anchor", ""),
     ],
-
     # Removing signs, cables, wall junk, etc.
     "background_cleanup": [
-        _mp(0.0, "Orange", "Analyze plane",
-            "Is it flat (planar track) or curved (mesh/point)? Choose tracker accordingly."),
-        _mp(1.0, "Blue", "Perspective insert",
-            "Corner-pin a clean patch in perspective; match lens distortion if heavy wide."),
-        _mp(2.0, "Green", "Edge contamination",
-            "Avoid straight mask edges across textured bricks/tiles; irregular feather sells it."),
-        _mp(3.0, "Pink", "Lighting continuity",
-            "Replicate falloff & vignette; add tiny shadow where object was so wall doesn't look 'too clean'."),
-        _mp(4.0, "Yellow", "Grain / noise",
-            "Sample target area's noise level; add back after composite to prevent 'cutout' look."),
+        _mp(
+            0.0,
+            "Orange",
+            "Analyze plane",
+            "Is it flat (planar track) or curved (mesh/point)? Choose tracker accordingly.",
+        ),
+        _mp(
+            1.0,
+            "Blue",
+            "Perspective insert",
+            "Corner-pin a clean patch in perspective; match lens distortion if heavy wide.",
+        ),
+        _mp(
+            2.0,
+            "Green",
+            "Edge contamination",
+            "Avoid straight mask edges across textured bricks/tiles; irregular feather sells it.",
+        ),
+        _mp(
+            3.0,
+            "Pink",
+            "Lighting continuity",
+            "Replicate falloff & vignette; add tiny shadow where object was so wall doesn't look 'too clean'.",
+        ),
+        _mp(
+            4.0,
+            "Yellow",
+            "Grain / noise",
+            "Sample target area's noise level; add back after composite to prevent 'cutout' look.",
+        ),
         _mp(299.0, "Blue", "⏱ 5min anchor", ""),
     ],
-
     # Paint-out for a lav/mic cable crossing the hand/arm
     "remove_mic_cable": [
-        _mp(0.0, "Orange", "Prep",
-            "Stabilize the hand region (temp) to simplify paint/roto; work in stabilized space."),
-        _mp(1.0, "Blue", "Roto contour",
-            "Follow knuckle silhouettes; keep feather into skin not into background."),
-        _mp(2.0, "Green", "Clone/patch passes",
-            "Borrow from nearby skin frames; track to hand motion; avoid sliding texture."),
-        _mp(3.0, "Pink", "Specular continuity",
-            "Rebuild highlight streaks across the patch; tiny dodge/burn beats blur every time."),
-        _mp(4.0, "Cyan", "Motion blur",
-            "Match shutter blur on fast finger moves; composite pre-blur, not post."),
-        _mp(5.0, "Yellow", "Final grain",
-            "Add matched grain over the composite; check at 100% zoom."),
+        _mp(
+            0.0,
+            "Orange",
+            "Prep",
+            "Stabilize the hand region (temp) to simplify paint/roto; work in stabilized space.",
+        ),
+        _mp(
+            1.0,
+            "Blue",
+            "Roto contour",
+            "Follow knuckle silhouettes; keep feather into skin not into background.",
+        ),
+        _mp(
+            2.0,
+            "Green",
+            "Clone/patch passes",
+            "Borrow from nearby skin frames; track to hand motion; avoid sliding texture.",
+        ),
+        _mp(
+            3.0,
+            "Pink",
+            "Specular continuity",
+            "Rebuild highlight streaks across the patch; tiny dodge/burn beats blur every time.",
+        ),
+        _mp(
+            4.0,
+            "Cyan",
+            "Motion blur",
+            "Match shutter blur on fast finger moves; composite pre-blur, not post.",
+        ),
+        _mp(
+            5.0,
+            "Yellow",
+            "Final grain",
+            "Add matched grain over the composite; check at 100% zoom.",
+        ),
         _mp(299.0, "Blue", "⏱ 5min anchor", ""),
     ],
-
     # Split/duplicate hand at sampler/pads
     "hand_split": [
-        _mp(0.0, "Orange", "Plates & timing",
-            "Record two performance passes to the same click; clap or beep for sync."),
-        _mp(1.0, "Blue", "Registration",
-            "Lock camera; if not, stabilize both plates to the sampler face."),
-        _mp(2.0, "Green", "Mask logic",
-            "Choose overlap line along hardware edges; avoid finger edges crossing seam."),
-        _mp(3.0, "Pink", "Pad feedback",
-            "Duplicate LED/hit feedback under the correct hand; avoid double-lit pads."),
-        _mp(4.0, "Cyan", "Audio truth",
-            "If printing live audio, comp the correct take for each hit; no double hits."),
-        _mp(5.0, "Yellow", "Micro parallax",
-            "If hands drift apart, micro-warp one plate to the other near the seam."),
+        _mp(
+            0.0,
+            "Orange",
+            "Plates & timing",
+            "Record two performance passes to the same click; clap or beep for sync.",
+        ),
+        _mp(
+            1.0,
+            "Blue",
+            "Registration",
+            "Lock camera; if not, stabilize both plates to the sampler face.",
+        ),
+        _mp(
+            2.0,
+            "Green",
+            "Mask logic",
+            "Choose overlap line along hardware edges; avoid finger edges crossing seam.",
+        ),
+        _mp(
+            3.0,
+            "Pink",
+            "Pad feedback",
+            "Duplicate LED/hit feedback under the correct hand; avoid double-lit pads.",
+        ),
+        _mp(
+            4.0,
+            "Cyan",
+            "Audio truth",
+            "If printing live audio, comp the correct take for each hit; no double hits.",
+        ),
+        _mp(
+            5.0,
+            "Yellow",
+            "Micro parallax",
+            "If hands drift apart, micro-warp one plate to the other near the seam.",
+        ),
         _mp(299.0, "Blue", "⏱ 5min anchor", ""),
     ],
-
     # Screen/UI insert
     "screen_insert": [
-        _mp(0.0, "Orange", "Track",
-            "Planar track the screen surface; verify track on edges & diagonals, not just corners."),
-        _mp(1.0, "Blue", "Corner pin",
-            "Apply corner pin; precomp UI at native aspect; avoid subpixel shimmer by slight defocus."),
-        _mp(2.0, "Green", "Display look",
-            "Gamma lift + slight saturation cut; add 1–2 px inner glow and faint reflection pass."),
-        _mp(3.0, "Pink", "Motion blur & flicker",
-            "Match shutter blur; optional subtle 0.5–1% luminance flicker to sell emissive panel."),
-        _mp(4.0, "Cyan", "Moire / aliasing",
-            "Add tiny grain and 0.2–0.4 px defocus to kill moire while keeping UI crisp enough."),
-        _mp(5.0, "Yellow", "Light spill",
-            "Add light wrap onto bezels/fingers at bright frames; very low opacity."),
+        _mp(
+            0.0,
+            "Orange",
+            "Track",
+            "Planar track the screen surface; verify track on edges & diagonals, not just corners.",
+        ),
+        _mp(
+            1.0,
+            "Blue",
+            "Corner pin",
+            "Apply corner pin; precomp UI at native aspect; avoid subpixel shimmer by slight defocus.",
+        ),
+        _mp(
+            2.0,
+            "Green",
+            "Display look",
+            "Gamma lift + slight saturation cut; add 1–2 px inner glow and faint reflection pass.",
+        ),
+        _mp(
+            3.0,
+            "Pink",
+            "Motion blur & flicker",
+            "Match shutter blur; optional subtle 0.5–1% luminance flicker to sell emissive panel.",
+        ),
+        _mp(
+            4.0,
+            "Cyan",
+            "Moire / aliasing",
+            "Add tiny grain and 0.2–0.4 px defocus to kill moire while keeping UI crisp enough.",
+        ),
+        _mp(
+            5.0,
+            "Yellow",
+            "Light spill",
+            "Add light wrap onto bezels/fingers at bright frames; very low opacity.",
+        ),
         _mp(299.0, "Blue", "⏱ 5min anchor", ""),
     ],
 }
 
 # ───────────────────────── Selects & Stringouts packs ─────────────────────────
+
 
 def _selects_variant_for_title(norm_title: str):
     """Detect which Selects/Stringouts variant to use based on timeline name."""
@@ -845,112 +1192,243 @@ def _selects_variant_for_title(norm_title: str):
 
 
 SELECTS_BASE = [
-    _mp(0.0, "Purple", "SELECTS — Workflow",
-        "Pass 1: reject hard misses. Pass 2: keep only 'A' material. Pass 3: choose alts."),
-    _mp(1.0, "Orange", "Labeling & notes",
-        "Use ⭐/color or keywords in Notes: hook, verse, cutaway, reaction, alt, NG."),
-    _mp(2.0, "Blue", "Cut points",
-        "Prefer cuts on motion/syllables; add 6–12f handles to each pick for safety."),
-    _mp(3.0, "Green", "Sync sanity",
-        "Mark claps/peaks; verify frame-accurate sync against waveform/transients."),
-    _mp(4.0, "Yellow", "Stringout pointers",
-        "Range-mark best beats; leave short gaps between ideas to hear pacing honestly."),
+    _mp(
+        0.0,
+        "Purple",
+        "SELECTS — Workflow",
+        "Pass 1: reject hard misses. Pass 2: keep only 'A' material. Pass 3: choose alts.",
+    ),
+    _mp(
+        1.0,
+        "Orange",
+        "Labeling & notes",
+        "Use ⭐/color or keywords in Notes: hook, verse, cutaway, reaction, alt, NG.",
+    ),
+    _mp(
+        2.0,
+        "Blue",
+        "Cut points",
+        "Prefer cuts on motion/syllables; add 6–12f handles to each pick for safety.",
+    ),
+    _mp(
+        3.0,
+        "Green",
+        "Sync sanity",
+        "Mark claps/peaks; verify frame-accurate sync against waveform/transients.",
+    ),
+    _mp(
+        4.0,
+        "Yellow",
+        "Stringout pointers",
+        "Range-mark best beats; leave short gaps between ideas to hear pacing honestly.",
+    ),
     _mp(299.0, "Blue", "⏱ 5min anchor", ""),
 ]
 
 SELECTS_SPECIFIC = {
     # ——— Music-Video
     "mv_perf": [
-        _mp(5.0, "Red", "Lyric map",
-            "Note bar:line references in Notes (e.g., V1L3). Keep best energy + clean lipsync."),
-        _mp(6.0, "Blue", "Angle variety",
-            "Favor angle changes on rhyme landings; avoid 3+ consecutive takes of same lens."),
-        _mp(7.0, "Pink", "Micro-ramps",
-            "Tag rampable hits (impact/word) for later 90–110% time-micro to sell emphasis."),
+        _mp(
+            5.0,
+            "Red",
+            "Lyric map",
+            "Note bar:line references in Notes (e.g., V1L3). Keep best energy + clean lipsync.",
+        ),
+        _mp(
+            6.0,
+            "Blue",
+            "Angle variety",
+            "Favor angle changes on rhyme landings; avoid 3+ consecutive takes of same lens.",
+        ),
+        _mp(
+            7.0,
+            "Pink",
+            "Micro-ramps",
+            "Tag rampable hits (impact/word) for later 90–110% time-micro to sell emphasis.",
+        ),
     ],
     "broll": [
-        _mp(5.0, "Orange", "Texture diversity",
-            "Collect movement textures (hands, lights, environment). Avoid duplicates of same move."),
-        _mp(6.0, "Cyan", "Parallax / depth",
-            "Prefer foreground passes & reveals; tag any perfect whip/cover for transitions."),
-        _mp(7.0, "Green", "Cutaway purpose",
-            "Each B-roll pick should illustrate a lyric/idea or hide an A-roll cut."),
+        _mp(
+            5.0,
+            "Orange",
+            "Texture diversity",
+            "Collect movement textures (hands, lights, environment). Avoid duplicates of same move.",
+        ),
+        _mp(
+            6.0,
+            "Cyan",
+            "Parallax / depth",
+            "Prefer foreground passes & reveals; tag any perfect whip/cover for transitions.",
+        ),
+        _mp(
+            7.0,
+            "Green",
+            "Cutaway purpose",
+            "Each B-roll pick should illustrate a lyric/idea or hide an A-roll cut.",
+        ),
     ],
-
     # ——— Fashion
     "fashion_look": [
-        _mp(5.0, "Red", "Silhouette first",
-            "Pick one clean full-body read per look; then 2–3 detail shots (fabric, hardware)."),
-        _mp(6.0, "Blue", "Motion beauty",
-            "Walk/turn/hair moments with flow; reject frames that crush garment shape."),
-        _mp(7.0, "Yellow", "Color/texture continuity",
-            "Note lighting shifts; tag candidates for thumbnail/carousel."),
+        _mp(
+            5.0,
+            "Red",
+            "Silhouette first",
+            "Pick one clean full-body read per look; then 2–3 detail shots (fabric, hardware).",
+        ),
+        _mp(
+            6.0,
+            "Blue",
+            "Motion beauty",
+            "Walk/turn/hair moments with flow; reject frames that crush garment shape.",
+        ),
+        _mp(
+            7.0,
+            "Yellow",
+            "Color/texture continuity",
+            "Note lighting shifts; tag candidates for thumbnail/carousel.",
+        ),
     ],
-
     # ——— Talking Head
     "th_aroll": [
-        _mp(5.0, "Red", "Message spine",
-            "Select crisp claims and proofs; cut fillers/false starts/breath-tails."),
-        _mp(6.0, "Blue", "Cut on gesture",
-            "Hide jump cuts under head/hand motion; tag phrases needing B-roll coverage."),
-        _mp(7.0, "Green", "Caption sync",
-            "Keep phrase boundaries clean for line breaks; avoid mid-word cuts."),
+        _mp(
+            5.0,
+            "Red",
+            "Message spine",
+            "Select crisp claims and proofs; cut fillers/false starts/breath-tails.",
+        ),
+        _mp(
+            6.0,
+            "Blue",
+            "Cut on gesture",
+            "Hide jump cuts under head/hand motion; tag phrases needing B-roll coverage.",
+        ),
+        _mp(
+            7.0,
+            "Green",
+            "Caption sync",
+            "Keep phrase boundaries clean for line breaks; avoid mid-word cuts.",
+        ),
     ],
     "th_broll": [
-        _mp(5.0, "Orange", "Illustrative matches",
-            "Pick visuals that literally prove the sentence; 1–2 per point max."),
-        _mp(6.0, "Cyan", "Readability",
-            "Avoid busy frames behind captions; prefer negative space or shallow DOF."),
+        _mp(
+            5.0,
+            "Orange",
+            "Illustrative matches",
+            "Pick visuals that literally prove the sentence; 1–2 per point max.",
+        ),
+        _mp(
+            6.0,
+            "Cyan",
+            "Readability",
+            "Avoid busy frames behind captions; prefer negative space or shallow DOF.",
+        ),
     ],
-
     # ——— Day in the Life
     "dil_generic": [
-        _mp(5.0, "Red", "Micro-scenes",
-            "Collect clear begin→middle→end beats (3–6s each)."),
-        _mp(6.0, "Blue", "Entrances/Exits",
-            "Favor shots with natural in/out motion for seamless chaining."),
+        _mp(
+            5.0,
+            "Red",
+            "Micro-scenes",
+            "Collect clear begin→middle→end beats (3–6s each).",
+        ),
+        _mp(
+            6.0,
+            "Blue",
+            "Entrances/Exits",
+            "Favor shots with natural in/out motion for seamless chaining.",
+        ),
     ],
     "dil_commute": [
-        _mp(5.0, "Orange", "Travel rhythm",
-            "Wheels/doors/steps ambience; grab a few speed & direction variations."),
-        _mp(6.0, "Green", "Landmarks",
-            "Tag 1–2 location wides for context; hold for 0.5–1.0s longer."),
+        _mp(
+            5.0,
+            "Orange",
+            "Travel rhythm",
+            "Wheels/doors/steps ambience; grab a few speed & direction variations.",
+        ),
+        _mp(
+            6.0,
+            "Green",
+            "Landmarks",
+            "Tag 1–2 location wides for context; hold for 0.5–1.0s longer.",
+        ),
     ],
     "dil_coffee": [
-        _mp(5.0, "Pink", "Hands & steam",
-            "Close-ups of pour/steam; use them to reset cadence later."),
-        _mp(6.0, "Yellow", "Loop beats",
-            "Pick a looping action (stir, sip, door swing) for intros/outros."),
+        _mp(
+            5.0,
+            "Pink",
+            "Hands & steam",
+            "Close-ups of pour/steam; use them to reset cadence later.",
+        ),
+        _mp(
+            6.0,
+            "Yellow",
+            "Loop beats",
+            "Pick a looping action (stir, sip, door swing) for intros/outros.",
+        ),
     ],
-
     # ——— Cook-Ups
     "cook_overhead": [
-        _mp(5.0, "Red", "Clean hits",
-            "Choose takes with clear pad contact & stable wrist; reject occluded hits."),
-        _mp(6.0, "Blue", "UI context",
-            "Grab short UI pans for key/plugin; make sure values are legible."),
+        _mp(
+            5.0,
+            "Red",
+            "Clean hits",
+            "Choose takes with clear pad contact & stable wrist; reject occluded hits.",
+        ),
+        _mp(
+            6.0,
+            "Blue",
+            "UI context",
+            "Grab short UI pans for key/plugin; make sure values are legible.",
+        ),
     ],
     "cook_front": [
-        _mp(5.0, "Orange", "Energy & eye line",
-            "Prefer takes with micro-groove and camera engagement; avoid dead stares."),
-        _mp(6.0, "Green", "Reveal moments",
-            "Pick sequences that set up/pay off arrangement changes."),
+        _mp(
+            5.0,
+            "Orange",
+            "Energy & eye line",
+            "Prefer takes with micro-groove and camera engagement; avoid dead stares.",
+        ),
+        _mp(
+            6.0,
+            "Green",
+            "Reveal moments",
+            "Pick sequences that set up/pay off arrangement changes.",
+        ),
     ],
     "cook_foley": [
-        _mp(5.0, "Cyan", "Transient truth",
-            "Select crisp knob turns/clicks; align to grid transient if needed."),
-        _mp(6.0, "Yellow", "Variety",
-            "Gather a library: short/long whooshes, reverse, button, cloth, hands."),
+        _mp(
+            5.0,
+            "Cyan",
+            "Transient truth",
+            "Select crisp knob turns/clicks; align to grid transient if needed.",
+        ),
+        _mp(
+            6.0,
+            "Yellow",
+            "Variety",
+            "Gather a library: short/long whooshes, reverse, button, cloth, hands.",
+        ),
     ],
-
     # ——— Stringout (generic fallback)
     "stringout_generic": [
-        _mp(5.0, "Red", "Order",
-            "Hook → context → develop → payoff. Keep a 3:1 selects-to-runtime ratio."),
-        _mp(6.0, "Blue", "Air for pacing",
-            "Leave tiny gaps between ideas; listen without music first, then add bed."),
-        _mp(7.0, "Green", "Markers to beats",
-            "Range-mark final beats to guide transitions and graphics later."),
+        _mp(
+            5.0,
+            "Red",
+            "Order",
+            "Hook → context → develop → payoff. Keep a 3:1 selects-to-runtime ratio.",
+        ),
+        _mp(
+            6.0,
+            "Blue",
+            "Air for pacing",
+            "Leave tiny gaps between ideas; listen without music first, then add bed.",
+        ),
+        _mp(
+            7.0,
+            "Green",
+            "Markers to beats",
+            "Range-mark final beats to guide transitions and graphics later.",
+        ),
     ],
 }
 
@@ -978,7 +1456,9 @@ PRINCIPLE_PACKS = {
             "Loop seam awareness",
             "Plan an end frame that re-enters cleanly if the video loops on social.",
         ),
-        _mp(299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"),
+        _mp(
+            299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"
+        ),
     ],
     # ④ ShotFX — beauty/compositing/cleanup without overworking the shot
     "shotfx": [
@@ -1002,7 +1482,9 @@ PRINCIPLE_PACKS = {
             "Look exploration",
             "Try one alternate 'beauty vs grit' treatment for options later.",
         ),
-        _mp(299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"),
+        _mp(
+            299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"
+        ),
     ],
     # ⑤ Talking Head — clarity + retention psychology
     "talking_head": [
@@ -1026,7 +1508,9 @@ PRINCIPLE_PACKS = {
             "Pacing & captions",
             "Keep line breaks on phrase boundaries; punch keywords with subtle zoom/audio emphasis.",
         ),
-        _mp(299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"),
+        _mp(
+            299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"
+        ),
     ],
     # ⑥ Fashion — silhouette, detail storytelling, motion aura
     "fashion": [
@@ -1044,8 +1528,15 @@ PRINCIPLE_PACKS = {
             "Motion beauty",
             "Feature a fluid move here (turn/step/hair/garment ripple).",
         ),
-        _mp(2.0, "Green", "Thumbnail candidates", "Flag strong stills for covers/carousels later."),
-        _mp(299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"),
+        _mp(
+            2.0,
+            "Green",
+            "Thumbnail candidates",
+            "Flag strong stills for covers/carousels later.",
+        ),
+        _mp(
+            299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"
+        ),
     ],
     # ⑦ Day in the Life — micro-story structure
     "day_in_the_life": [
@@ -1069,8 +1560,15 @@ PRINCIPLE_PACKS = {
             "Transition moment",
             "Natural hop to the next micro-scene (movement/sound change).",
         ),
-        _mp(3.0, "Green", "Cycle closure", "Leave a resolved beat that can loop if needed."),
-        _mp(299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"),
+        _mp(
+            3.0,
+            "Green",
+            "Cycle closure",
+            "Leave a resolved beat that can loop if needed.",
+        ),
+        _mp(
+            299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"
+        ),
     ],
     # ⑧ Cook-Ups — show progress & payoff without getting lost
     "cook_ups": [
@@ -1099,9 +1597,135 @@ PRINCIPLE_PACKS = {
             "Vibe spike",
             "Create a small peak (camera move, slow-mo, quick cut burst).",
         ),
-        _mp(299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"),
+        _mp(
+            299.0, "Blue", "⏱ 5min anchor", "Timeline duration marker (auto-generated)"
+        ),
     ],
 }
+
+
+# ───────────────────────── Edit pacing guidance (global) ─────────────────────────
+_CUT_GUIDE_DEFAULT = {
+    "HOOK": "Edit pacing: average shot 0.6–1.0s; avoid holds >1.3s unless a reveal lands.",
+    "DRAW": "Edit pacing: 0.8–1.5s per beat; each cut must add new info/contrast.",
+    "INTERRUPT": "Edit pacing: ≤0.5–0.7s micro-jolt (whip/insert/flip).",
+    "COMMIT / PAYOFF": "Edit pacing: let clarity breathe 1.2–2.2s; cut earlier if energy dips.",
+    "COMMIT / PAYOFF #1": "Edit pacing: 1.0–1.8s; extend only for readability/proof.",
+    "SECOND HOOK": "Edit pacing: 0.7–1.2s beats; sharper than the first to recapture.",
+    "DEVELOP": "Edit pacing: 1.0–1.8s/beat; 2–3 support beats max before moving on.",
+    "DEVELOP A": "Edit pacing: ~1.3–1.9s/beat; escalate motion/variation every 2–3 cuts.",
+    "DEVELOP B": "Edit pacing: ~1.0–1.6s/beat; quicker than A to build into the close.",
+    "FINAL PAYOFF / LOOP": "Edit pacing: 0.8–1.5s; favor clean loop seam or unmistakable CTA.",
+    "LOOP / CTA": "Edit pacing: 0.5–1.2s; quick, readable, loop-friendly.",
+}
+
+# Lane-specific nudges layered on top
+_CUT_GUIDE_BY_LANE = {
+    "money": {
+        "HOOK": "Money nuance: keep copy plain; 0.6–0.9s 'receipt' cut is ideal.",
+        "COMMIT / PAYOFF": "Money nuance: up to ~2.4s if proof needs a clean read.",
+    },
+    "mv": {
+        "HOOK": "MV nuance: front-load signature visual; 0.5–0.9s with rhythm accents.",
+        "DRAW": "MV nuance: lean on lyric/beat sync; stay <1.3s unless choreography sells.",
+        "COMMIT / PAYOFF": "MV nuance: musical phrase can justify 1.5–2.2s; add camera energy if longer.",
+    },
+    "fashion": {
+        "HOOK": "Fashion nuance: silhouette read > flash; 0.8–1.4s pose can hold if clean.",
+        "DRAW": "Fashion nuance: detail inserts ~0.7–1.1s; avoid back-to-back similar textures.",
+        "COMMIT / PAYOFF": "Fashion nuance: full-body/transition may hold 1.6–2.4s if attitude carries.",
+    },
+    "talking": {
+        "HOOK": "Talking nuance: punch line then move; 0.7–1.2s with breath trims.",
+        "DRAW": "Talking nuance: B-roll overlays 0.8–1.3s; hide jump cuts.",
+        "COMMIT / PAYOFF": "Talking nuance: let takeaway land ~1.4–2.2s if comprehension benefits.",
+        "DEVELOP": "Talking nuance: one tight example 1.0–1.6s; don't spiral.",
+    },
+    "dil": {
+        "HOOK": "DIL nuance: mid-action entry; 0.6–1.0s, keep momentum.",
+        "DRAW": "DIL nuance: mini-arc beats 0.9–1.5s; vary textures (hands/ambient/motion).",
+        "COMMIT / PAYOFF": "DIL nuance: micro-resolution can hold 1.2–2.0s if it 'arrives'.",
+    },
+    "cook": {
+        "HOOK": "Cook-Ups nuance: show identity sound first; 0.6–1.0s with visible action.",
+        "DRAW": "Cook-Ups nuance: layer/constraint ~0.8–1.2s; keep UI readable.",
+        "COMMIT / PAYOFF": "Cook-Ups nuance: let the 'lock' groove sit 1.5–2.4s if it slaps.",
+        "DEVELOP": "Cook-Ups nuance: fills/mutes/knob rides 0.6–1.0s; align to beat grid.",
+        "FINAL PAYOFF / LOOP": "Cook-Ups nuance: land on a bar boundary; 1.0–1.6s if needed for musical loop.",
+    },
+}
+
+# Tier / context nudges (used for master tiers; 'principle' for non-masters)
+_TIER_NUDGE = {
+    "12s": "Tier nudge: bias toward the SHORT end (snappier overall).",
+    "22s": "Tier nudge: stay mid-range; one 1.6–2.0s hold is fine if it 'earns' it.",
+    "30s": "Tier nudge: include one longer 2.0–2.4s payoff; avoid back-to-back long holds.",
+    "principle": "Context: principle timeline—use ranges but favor clarity over speed if a technique needs readability.",
+    "selects": "Context: selects/stringouts—favor faster trims (0.5–1.0s) while reviewing; tag candidates then refine.",
+}
+
+
+def _role_normalize(name: str) -> str:
+    """Normalize marker role names to canonical forms."""
+    r = (name or "").upper().strip()
+    return {
+        "COMMIT/PAYOFF": "COMMIT / PAYOFF",
+        "PAYOFF": "COMMIT / PAYOFF",
+        "CTA": "LOOP / CTA",
+        "LOOP": "LOOP / CTA",
+    }.get(r, r)
+
+
+def _append_cut_note(base_note: str, lane: str, role: str, tier: str) -> str:
+    """Append lane- and section-specific edit pacing notes to a marker."""
+    role_key = _role_normalize(role)
+    lines = []
+    if role_key in _CUT_GUIDE_DEFAULT:
+        lines.append(_CUT_GUIDE_DEFAULT[role_key])
+    if lane in _CUT_GUIDE_BY_LANE and role_key in _CUT_GUIDE_BY_LANE[lane]:
+        lines.append(_CUT_GUIDE_BY_LANE[lane][role_key])
+    if tier in _TIER_NUDGE:
+        lines.append(_TIER_NUDGE[tier])
+    if not lines:
+        return base_note
+    if base_note and not base_note.endswith("\n"):
+        base_note += "\n"
+    return base_note + "— " + " ".join(lines)
+
+
+def _enrich_markers_with_cut_notes(markers, lane: str, tier: str):
+    """Enrich all markers with cut-note guidance based on lane and tier."""
+    out = []
+    for m in markers or []:
+        m2 = dict(m)
+        base = str(m2.get("notes", "") or "")
+        role = str(m2.get("name", "")).split(" (")[0]
+        m2["notes"] = _append_cut_note(base, lane, role, tier)
+        out.append(m2)
+    return out
+
+
+def _infer_lane_from_pillar_or_title(pillar_name: str, title: str) -> str:
+    """Infer the lane (money/mv/fashion/talking/dil/cook) from pillar or title."""
+    p = (pillar_name or "").lower()
+    t = (title or "").lower()
+    if "music-video" in p or t.startswith("segment —") or t.startswith("mv master"):
+        return "mv"
+    if "fashion" in p or t.startswith("look —") or t.startswith("fashion master"):
+        return "fashion"
+    if "talking head" in p or t.startswith("interview —") or t.startswith("th master"):
+        return "talking"
+    if (
+        "day in the life" in p
+        or t.startswith("chapter —")
+        or t.startswith("dil master")
+    ):
+        return "dil"
+    if "cook-ups" in p or t.startswith("section —") or t.startswith("cook-up master"):
+        return "cook"
+    if "money" in p or "money master" in t:
+        return "money"
+    return "money"  # safe default
 
 
 # Map timeline title to a principle pack (skip masters).
@@ -1282,7 +1906,9 @@ def timeline_exists(project, name):
     return False
 
 
-def ensure_tracks_named(tl, kind, names_top_to_bottom=None, names_left_to_right=None, stats=None):
+def ensure_tracks_named(
+    tl, kind, names_top_to_bottom=None, names_left_to_right=None, stats=None
+):
     if kind == "video":
         target = list(reversed(names_top_to_bottom or []))
     else:
@@ -1344,6 +1970,29 @@ def _sec_to_frames(sec, fps_float):
     return int(round(sec * fps_float))
 
 
+def _tighten_marker_borders_if_enabled(markers, fps_str):
+    """Tighten durations so each marker ends 1 frame before the next.
+    Default ON; set DEGA_MARKER_TIGHT_BORDERS=0 to disable."""
+    if not markers:
+        return markers
+    env = (os.getenv("DEGA_MARKER_TIGHT_BORDERS") or "").strip().lower()
+    enabled = env not in {"0", "false", "off", "no"}  # default ON
+    if not enabled:
+        return markers
+    try:
+        fps = float(fps_str)
+    except Exception:
+        fps = 29.97
+    ms = [dict(m) for m in sorted(markers, key=lambda x: float(x.get("t", 0.0)))]
+    for i in range(len(ms) - 1):
+        cur, nxt = ms[i], ms[i + 1]
+        cur_start = _sec_to_frames(float(cur.get("t", 0.0)), fps)
+        nxt_start = _sec_to_frames(float(nxt.get("t", 0.0)), fps)
+        tight = max(0, (nxt_start - cur_start) - 1)  # 1-frame visual seam
+        cur["dur"] = tight / fps
+    return ms
+
+
 def ensure_min_duration(dur_frames):
     """Guard for Resolve 20.2+ which requires duration >= 1 frame."""
     return max(1, int(dur_frames or 1))
@@ -1357,7 +2006,9 @@ def _add_marker_safe(tl, frame, color, name, note, dur_frames):
         ok = tl.AddMarker(frame, color, name, note, dur_frames, "")
         if ok:
             return True
-        log.debug(f"      ⚠️  AddMarker failed (6-arg): frame={frame}, color={color}, name={name}")
+        log.debug(
+            f"      ⚠️  AddMarker failed (6-arg): frame={frame}, color={color}, name={name}"
+        )
         fb = _COLOR_FALLBACK.get(color)
         if fb:
             ok2 = tl.AddMarker(frame, fb, name, note, dur_frames, "")
@@ -1371,12 +2022,16 @@ def _add_marker_safe(tl, frame, color, name, note, dur_frames):
             if ok3:
                 log.debug(f"      ✓ AddMarker succeeded (5-arg)")
                 return True
-            log.debug(f"      ⚠️  AddMarker failed (5-arg): frame={frame}, color={color}")
+            log.debug(
+                f"      ⚠️  AddMarker failed (5-arg): frame={frame}, color={color}"
+            )
             fb = _COLOR_FALLBACK.get(color)
             if fb:
                 ok4 = tl.AddMarker(frame, fb, name, note, dur_frames)
                 if ok4:
-                    log.debug(f"      ✓ AddMarker succeeded (5-arg) with fallback: {fb}")
+                    log.debug(
+                        f"      ✓ AddMarker succeeded (5-arg) with fallback: {fb}"
+                    )
                     return True
         except Exception as e2:
             log.debug(f"      ⚠️  AddMarker exception (5-arg): {e2}")
@@ -1485,7 +2140,9 @@ def add_markers_to_timeline_if_empty(tl, fps_str, markers, force=False):
             added += 1
 
     if added == 0 and marker_count > 0:
-        log.warning("   ⚠️  Timeline appears empty (0 duration) - markers cannot be added until clips are present")
+        log.warning(
+            "   ⚠️  Timeline appears empty (0 duration) - markers cannot be added until clips are present"
+        )
     log.info("   ✅ Markers added: %d", added)
     return added
 
@@ -1527,7 +2184,9 @@ def restore_project_defaults(project, prev):
             pass
 
 
-def create_vertical_timeline(mp, project, folder, title, w, h, fps, stats, markers=None):
+def create_vertical_timeline(
+    mp, project, folder, title, w, h, fps, stats, markers=None
+):
     if not folder:
         stats.timelines_failed += 1
         stats.log_error(f"Timeline creation: {title}", "No target folder")
@@ -1539,7 +2198,9 @@ def create_vertical_timeline(mp, project, folder, title, w, h, fps, stats, marke
         tl = mp.CreateEmptyTimeline(title)
         if not tl:
             stats.timelines_failed += 1
-            stats.log_error(f"Timeline creation: {title}", "CreateEmptyTimeline returned None")
+            stats.log_error(
+                f"Timeline creation: {title}", "CreateEmptyTimeline returned None"
+            )
             restore_project_defaults(project, prev)
             return None
     except Exception as e:
@@ -1574,7 +2235,9 @@ def upgrade_existing_track_labels(tl):
         pass
 
 
-def create_vertical_timeline_unique(mp, project, folder, title, w, h, fps, stats, markers=None):
+def create_vertical_timeline_unique(
+    mp, project, folder, title, w, h, fps, stats, markers=None
+):
     # If exists: upgrade labels and seed markers (only if empty)
     if timeline_exists(project, title):
         log.info("    ↺ Timeline exists: %s", title)
@@ -1592,7 +2255,9 @@ def create_vertical_timeline_unique(mp, project, folder, title, w, h, fps, stats
             pass
         stats.timelines_skipped += 1
         return None
-    return create_vertical_timeline(mp, project, folder, title, w, h, fps, stats, markers=markers)
+    return create_vertical_timeline(
+        mp, project, folder, title, w, h, fps, stats, markers=markers
+    )
 
 
 # ───────────────────────── Build structure ─────────────────────────
@@ -1669,7 +2334,10 @@ PILLARS = {
             "Section — Performance Take",
             "Section — Mix Touches / Print",
         ],
-        "30 | Shot FX & Clones": ["ShotFX — Hand Split at Sampler", "ShotFX — Screen Insert (UI)"],
+        "30 | Shot FX & Clones": [
+            "ShotFX — Hand Split at Sampler",
+            "ShotFX — Screen Insert (UI)",
+        ],
         "40 | Selects & Stringouts": [
             "Overhead Selects — Keys",
             "Front Cam Selects — Takes",
@@ -1681,9 +2349,14 @@ PILLARS = {
 
 
 def seed_principle_markers_across_project(project, mp):
-    """Seed principle markers on all matching non-master timelines."""
+    """Seed principle markers on all matching non-master timelines with enrichment."""
     # optional env toggle to force reseed: 1/true/yes/on
-    force_env = os.getenv("DEGA_PRINCIPLE_FORCE_RESEED", "").strip().lower() in {"1", "true", "yes", "on"}
+    force_env = os.getenv("DEGA_PRINCIPLE_FORCE_RESEED", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     cnt = int(project.GetTimelineCount() or 0)
 
     log.info("🏷️  Seeding principle markers across project...")
@@ -1697,16 +2370,32 @@ def seed_principle_markers_across_project(project, mp):
         if not pack:  # masters return []
             continue
 
+        # Infer lane and enrich markers with cut notes & tight borders
+        lane = _infer_lane_from_pillar_or_title("", title)
+        _tier_ctx = (
+            "selects"
+            if ("selects" in title.lower() or "stringouts" in title.lower())
+            else "principle"
+        )
+        markers = _enrich_markers_with_cut_notes(pack, lane, _tier_ctx)
+        markers = _tighten_marker_borders_if_enabled(markers, FPS)
+
         # Set timeline as current for operations
         project.SetCurrentTimeline(tl)
 
-        added = add_markers_to_timeline_if_empty(tl, FPS, pack, force=force_env)
-        if added == 0 and _count_markers(tl) == 0:
+        added = add_markers_to_timeline_if_empty(tl, FPS, markers, force=force_env)
+        if added > 0:
+            log.info(
+                f"   🏷️ Seeded {added} markers on '{title}' (lane={lane}, ctx={_tier_ctx}, force={force_env})"
+            )
+        elif added == 0 and _count_markers(tl) == 0:
             # empty timeline + no markers -> Resolve quirk: use silent-clip fallback
             try:
                 log.info(f"   🔧 Adding silent clip to enable markers on: {title}")
                 if ensure_timeline_nonempty_with_silence(mp, project, tl, seconds=2.0):
-                    added = add_markers_to_timeline_if_empty(tl, FPS, pack, force=True)
+                    added = add_markers_to_timeline_if_empty(
+                        tl, FPS, markers, force=True
+                    )
                     if added > 0:
                         log.info(f"   ✅ Fallback seeded {added} markers on: {title}")
             except Exception as e:
@@ -1767,40 +2456,18 @@ def main():
         stats,
     )
 
-    # Money Masters with markers
-    create_vertical_timeline_unique(
-        mp,
-        proj,
-        money_folder,
-        "Money Master — 12s (IG short) — 2160×3840 • 29.97p",
-        WIDTH,
-        HEIGHT,
-        FPS,
-        stats,
-        markers=LANE_MARKERS["money"]["12s"],
-    )
-    create_vertical_timeline_unique(
-        mp,
-        proj,
-        money_folder,
-        "Money Master — 22s (IG mid) — 2160×3840 • 29.97p",
-        WIDTH,
-        HEIGHT,
-        FPS,
-        stats,
-        markers=LANE_MARKERS["money"]["22s"],
-    )
-    create_vertical_timeline_unique(
-        mp,
-        proj,
-        money_folder,
-        "Money Master — 30s (IG upper) — 2160×3840 • 29.97p",
-        WIDTH,
-        HEIGHT,
-        FPS,
-        stats,
-        markers=LANE_MARKERS["money"]["30s"],
-    )
+    # Money Masters with markers (enriched with cut notes & tight borders)
+    for _name, _tier in [
+        ("Money Master — 12s (IG short) — 2160×3840 • 29.97p", "12s"),
+        ("Money Master — 22s (IG mid) — 2160×3840 • 29.97p", "22s"),
+        ("Money Master — 30s (IG upper) — 2160×3840 • 29.97p", "30s"),
+    ]:
+        _raw = LANE_MARKERS["money"][_tier]
+        _paced = _enrich_markers_with_cut_notes(_raw, "money", _tier)
+        _paced = _tighten_marker_borders_if_enabled(_paced, FPS)
+        create_vertical_timeline_unique(
+            mp, proj, money_folder, _name, WIDTH, HEIGHT, FPS, stats, markers=_paced
+        )
 
     # Formula lanes
     log.info("🧪 Creating Formula pillar structure…")
@@ -1822,13 +2489,31 @@ def main():
             log.info(f"  📂 {subbin_name}")
             sub_folder = get_or_create_folder(mp, pillar_folder, subbin_name, stats)
 
-            # seed standard timelines
+            # seed standard timelines (principle/selects/segments/shotfx etc.)
             for base in timeline_names:
                 title = base if "— ⏱" in base else f"{base} — ⏱ 29.97p • 📐 2160×3840"
-                principle_markers = get_principle_markers_for_title(title)
-                log.debug(
-                    "   📋 Timeline: %s → %d principle markers", title, len(principle_markers or [])
-                )
+                lane_guess = _infer_lane_from_pillar_or_title(pillar_name, title)
+
+                # Pull the appropriate principle pack (if any), then enrich & tighten
+                _pm = get_principle_markers_for_title(title)
+                if _pm:
+                    # Determine context tier for enrichment: use 'principle' by default,
+                    # but nudge 'selects' timelines with a different context line.
+                    _tier_ctx = (
+                        "selects"
+                        if ("selects" in title.lower() or "stringouts" in title.lower())
+                        else "principle"
+                    )
+                    _pm = _enrich_markers_with_cut_notes(_pm, lane_guess, _tier_ctx)
+                    _pm = _tighten_marker_borders_if_enabled(_pm, FPS)
+                    log.debug(
+                        "   🏷️  Timeline: %s → %d markers (lane=%s, ctx=%s)",
+                        title,
+                        len(_pm),
+                        lane_guess,
+                        _tier_ctx,
+                    )
+
                 create_vertical_timeline_unique(
                     mp,
                     proj,
@@ -1838,7 +2523,7 @@ def main():
                     HEIGHT,
                     FPS,
                     stats,
-                    markers=principle_markers,
+                    markers=_pm,
                 )
 
             # add tiered Master Build timelines with lane-specific markers
@@ -1870,14 +2555,21 @@ def main():
                             else (
                                 "TH Master"
                                 if lane_key == "talking"
-                                else "DIL Master" if lane_key == "dil" else "Cook-Up Master"
+                                else (
+                                    "DIL Master"
+                                    if lane_key == "dil"
+                                    else "Cook-Up Master"
+                                )
                             )
                         )
                     )
                     names = _tier_names(base_prefix)
-                    # Map to marker sets
+                    # Map to marker sets with enrichment & tightening
                     tier_keys = ["12s", "22s", "30s"]
                     for name, tier in zip(names, tier_keys, strict=False):
+                        raw = LANE_MARKERS[lane_key][tier]
+                        paced = _enrich_markers_with_cut_notes(raw, lane_key, tier)
+                        paced = _tighten_marker_borders_if_enabled(paced, FPS)
                         create_vertical_timeline_unique(
                             mp,
                             proj,
@@ -1887,7 +2579,7 @@ def main():
                             HEIGHT,
                             FPS,
                             stats,
-                            markers=LANE_MARKERS[lane_key][tier],
+                            markers=paced,
                         )
 
     # Seed principle markers across all matching timelines
@@ -1898,8 +2590,14 @@ def main():
     log.info("================================================")
     log.info("📊 BUILD COMPLETE")
     log.info("⏱ Duration: %.1f s", s["duration"])
-    log.info("📂 Folders: %d created, %d found", s["folders_created"], s["folders_found"])
-    log.info("🎬 Timelines: %d created, %d skipped", s["timelines_created"], s["timelines_skipped"])
+    log.info(
+        "📂 Folders: %d created, %d found", s["folders_created"], s["folders_found"]
+    )
+    log.info(
+        "🎬 Timelines: %d created, %d skipped",
+        s["timelines_created"],
+        s["timelines_skipped"],
+    )
     log.info("❌ Errors: %d", s["error_count"])
     if s["errors"]:
         log.info("🚨 Error Details:")

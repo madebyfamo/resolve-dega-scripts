@@ -19,6 +19,52 @@ make all
 make test
 ```
 
+## 🚀 DEPLOYMENT (CRITICAL FOR RESOLVE EXECUTION)
+
+**IMPORTANT:** DaVinci Resolve ONLY runs scripts from its Scripts directory, NOT from this development folder.
+
+### Two Directory System
+
+| Directory | Purpose | Path |
+|-----------|---------|------|
+| **Development** | Where you edit code | `/Users/rodneywright/Developer/FAMO Show Labs/resolve-dega-scripts/` |
+| **Execution** | Where Resolve runs code | `~/Library/Application Support/.../Scripts/Utility/` |
+
+### Deploy After Every Change
+
+```bash
+# Make deploy script executable (first time only)
+chmod +x deploy.sh
+
+# Deploy to Resolve (run after ANY code changes)
+./deploy.sh
+```
+
+### What deploy.sh Does
+
+1. ✅ Validates source file exists
+2. ✅ Creates target directory if needed
+3. ✅ Backs up existing script automatically
+4. ✅ Copies new version to Resolve
+5. ✅ Verifies successful deployment
+
+### For AI Assistants
+
+**📖 Read these first:**
+- `DEPLOYMENT-AI-GUIDE.md` - Comprehensive deployment instructions for AI
+- `DEPLOYMENT-QUICK-REF.md` - Quick reference card
+
+**⚡ Critical Rule:** ALWAYS run `./deploy.sh` after modifying `the_dega_template_full.py`
+
+```bash
+# Standard AI workflow
+cd /Users/rodneywright/Developer/FAMO\ Show\ Labs/resolve-dega-scripts
+# [make code changes]
+./deploy.sh  # ← MUST RUN THIS
+```
+
+See `DEPLOYMENT-AI-GUIDE.md` for complete details, troubleshooting, and workflow examples.
+
 ## 📋 TL;DR
 
 - **On save:** Ruff fixes + import sort → then Black formats
