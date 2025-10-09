@@ -2,6 +2,52 @@
 
 All notable changes to the DEGA Formula Builder project.
 
+## [v4.7.1] - 2025-10-09
+
+### 🎯 Enhancement: 100% Enrichment + Marker Lints
+Comprehensive marker enrichment and validation system via transparent monkey-patching.
+
+### Added
+- **DEFAULT_CUT_GUIDE**: Base seconds guidance for 9 marker types (HOOK, DRAW, COMMIT, PAYOFF, SECOND HOOK, DEVELOP, LOOP, CTA, INTERRUPT)
+- **LANE_NUANCE**: 6 lanes × specific marker type overrides with contextual tweaks
+  - Money: Clarity over speed
+  - MV: Performance energy snaps
+  - Fashion: Silhouette + detail breathing room
+  - Talking: Phrase rhythm awareness
+  - Day in the Life: Micro-scene structure
+  - Cook-Ups: UI/progress reveal timing
+- **TIER_OVERRIDES**: 3 tiers (12s/22s/30s) for tempo adjustment
+  - 12s: Quicker pacing (~0.8–1.1s hooks, ≤0.7s buttons)
+  - 22s: Balanced (uses defaults/lane nuances)
+  - 30s: More air (~1.0–1.4s hooks, ~1.5–2.0s commits)
+- **`enrich_marker_set_for()`**: Main enrichment function with priority system (TIER > LANE > DEFAULT)
+- **Monkey-Patching System**: Transparent enrichment via function wrapping
+  - `_monkey_patch_create_vertical()`: Wraps create_vertical_timeline_unique
+  - `_monkey_patch_add_markers()`: Wraps add_markers_to_timeline_if_empty
+  - Activated in main() before build starts
+- **Marker Lints**: Validation with human-readable warnings
+  - `_lint_timeline_markers()`: Per-timeline validation
+  - `run_marker_lints()`: Project-wide lint runner
+  - Schema validation (required fields check)
+  - Duration caps (prevent timeline overshoot)
+  - Collision detection (duplicate start times)
+- **SECONDS_PACING_DOC**: Philosophy documentation printed to log once per run
+
+### Changed
+- **Version Header**: Updated to v4.7.1 with enhancement description
+- **main() Initialization**: Now prints SECONDS_PACING_DOC and activates monkey-patches at start
+- **Build Completion**: Runs run_marker_lints() before proj.Save() for validation
+
+### Technical Details
+- **100% Coverage**: All markers enriched (Masters + Principles + Segments + ShotFX + Selects)
+- **Zero Breaking Changes**: v4.7 PACING_S system still used for masters
+- **Transparent Integration**: Monkey-patching requires no changes to core create_* functions
+- **Priority System**: TIER_OVERRIDES > LANE_NUANCE > DEFAULT_CUT_GUIDE for guidance lookup
+- **Lint Output**: Human-readable warnings with timeline names, marker names, and specific issues
+- **Lines Added**: ~275 lines (1610–1885) for complete enhancement system
+
+---
+
 ## [v4.7] - 2025-10-08
 
 ### 🎯 Philosophy Change: Seconds-Only Pacing

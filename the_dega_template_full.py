@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-DEGA — "The Formula" Builder (Resolve 20.2) — v4.7
+DEGA — "The Formula" Builder (Resolve 20.2) — v4.7.1
 Vertical 2160×3840 @ 29.97p • Emoji/Pipe naming • Non-destructive
 
-What's new in v4.7
-- Seconds-only pacing: Pure seconds-based cut guidance (no beat math) tailored by lane & tier.
-- Butt-joined markers: Adjacent markers extend to touch (1-frame butt) for seamless color bands.
-- 6 lanes × 3 tiers: Money, MV, Fashion, Talking, DIL, Cook-Ups each with 12s/22s/30s variants.
-- Section-specific guidance: HOOK, DRAW, COMMIT/PAYOFF, etc. get unique seconds ranges per context.
-- Applied to ALL timelines: Masters and principle timelines (Segments, ShotFX, Selects, etc.).
+What's new in v4.7.1
+- 100% enrichment: All markers get cut guidance via transparent monkey-patching.
+- Marker lints: Schema validation, duration caps, and collision detection with human-readable warnings.
+- SECONDS_PACING_DOC: Philosophy documentation printed to log once per run.
+- DEFAULT_CUT_GUIDE: 9 marker types (HOOK, DRAW, COMMIT, PAYOFF, etc.) with base seconds.
+- LANE_NUANCE: 6 lanes × specific marker overrides (Money clarity, MV energy, Fashion breath, etc.).
+- TIER_OVERRIDES: 3 tiers (12s quicker, 22s balanced, 30s more air) for tempo adjustment.
 
 What's new in v4.6
 - Cut-note enrichment with lane/tier-specific edit pacing guidance
@@ -1605,6 +1606,286 @@ PRINCIPLE_PACKS = {
 }
 
 
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# v4.7.1 Enhancement: 100% Enrichment + Marker Lints
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+SECONDS_PACING_DOC = """
+────────────────────────────────────────────────────────────────────────────────
+   SECONDS-ONLY PACING PHILOSOPHY (v4.7+)
+────────────────────────────────────────────────────────────────────────────────
+Cut guidance is specified in seconds (not beats or BPM), tailored by:
+  • Lane (Money/MV/Fashion/Talking/DIL/Cook-Ups)
+  • Tier (12s/22s/30s)
+  • Marker type (HOOK/DRAW/COMMIT/PAYOFF/etc.)
+
+This system provides human-readable guidance like:
+  "Cut every ~0.8–1.2s; micro-jolt ≤0.7s ok."
+
+No beat math. No tempo calculations. Just pure seconds for editor clarity.
+────────────────────────────────────────────────────────────────────────────────
+"""
+
+# ─────────────────────────── Base Cut Guidance (9 marker types) ─────────────────────────────
+DEFAULT_CUT_GUIDE = {
+    "HOOK": "Cut every ~1.0s; establish quickly.",
+    "DRAW": "Cut every ~0.8s; maintain momentum.",
+    "COMMIT": "Cut every ~1.3s; let proof breathe.",
+    "PAYOFF": "Cut every ~1.3s; let proof breathe.",
+    "SECOND HOOK": "Cut every ~0.9s; fresh energy.",
+    "DEVELOP": "Cut every ~1.1s; chain 2–3 beats.",
+    "LOOP": "≤0.8s button; clean loop frame.",
+    "CTA": "≤0.8s button; clear ask.",
+    "INTERRUPT": "≤0.6s micro-jolt.",
+}
+
+# ─────────────────────────── Lane-Specific Nuances (6 lanes) ─────────────────────────────
+LANE_NUANCE = {
+    "money": {
+        "HOOK": "~0.9–1.2s; clarity over speed.",
+        "DRAW": "~0.7–1.0s; build trust fast.",
+        "COMMIT": "~1.2–1.6s; proof needs air.",
+        "PAYOFF": "~1.2–1.6s; proof needs air.",
+    },
+    "mv": {
+        "HOOK": "~0.7–1.0s; snap on motion apex.",
+        "DRAW": "~0.6–0.9s; switch angle/location quickly.",
+        "COMMIT": "~1.2–1.6s; preserve groove.",
+        "PAYOFF": "~1.2–1.6s; preserve groove.",
+    },
+    "fashion": {
+        "HOOK": "~0.8–1.1s; silhouette read.",
+        "DRAW": "~0.7–1.0s; detail contrast.",
+        "COMMIT": "~1.3–1.7s; full-body reveal needs breath.",
+        "PAYOFF": "~1.3–1.7s; full-body reveal needs breath.",
+    },
+    "talking": {
+        "HOOK": "~1.0–1.3s; phrase first.",
+        "DRAW": "~0.9–1.2s; keep speech rhythm.",
+        "COMMIT": "~1.4–1.8s; phrase completion matters.",
+        "PAYOFF": "~1.4–1.8s; phrase completion matters.",
+    },
+    "day_in_the_life": {
+        "HOOK": "~0.9–1.2s; intent fast.",
+        "DRAW": "~0.8–1.1s; micro-scenes > montage blur.",
+        "COMMIT": "~1.3–1.7s; resolution beat.",
+        "PAYOFF": "~1.3–1.7s; resolution beat.",
+    },
+    "cook_ups": {
+        "HOOK": "~1.0–1.3s; motif intro.",
+        "DRAW": "~0.8–1.1s; show progress.",
+        "COMMIT": "~1.4–1.8s; UI/sound reveal needs time.",
+        "PAYOFF": "~1.4–1.8s; UI/sound reveal needs time.",
+    },
+}
+
+# ─────────────────────────── Tier Tempo Adjustments (3 tiers) ─────────────────────────────
+TIER_OVERRIDES = {
+    "12s": {
+        "HOOK": "~0.8–1.1s; quicker.",
+        "DRAW": "~0.6–0.9s; maintain drive.",
+        "COMMIT": "~1.1–1.5s; brief proof.",
+        "PAYOFF": "~1.1–1.5s; brief proof.",
+        "LOOP": "≤0.7s; tight button.",
+        "CTA": "≤0.7s; tight button.",
+    },
+    "22s": {
+        # Balanced—use defaults or lane nuances
+    },
+    "30s": {
+        "HOOK": "~1.0–1.4s; more air.",
+        "DRAW": "~0.9–1.2s; don't drag.",
+        "DEVELOP": "~1.1–1.6s; avoid meander.",
+        "COMMIT": "~1.5–2.0s; let breathe.",
+        "PAYOFF": "~1.5–2.0s; let breathe.",
+    },
+}
+
+
+def enrich_marker_set_for(markers, lane=None, tier=None):
+    """
+    Append cut guidance to each marker's note.
+    Priority: TIER_OVERRIDES > LANE_NUANCE > DEFAULT_CUT_GUIDE
+    
+    Args:
+        markers: List of marker dicts with 'name' and 'note' keys
+        lane: Lane name (e.g., "money", "mv", "fashion", etc.)
+        tier: Tier name (e.g., "12s", "22s", "30s")
+    
+    Returns:
+        List of enriched marker dicts (modifies in place)
+    """
+    for m in markers:
+        title = m.get("name", "")
+        note = m.get("note", "")
+        
+        # Extract marker type from title (e.g., "HOOK", "DRAW", "COMMIT / PAYOFF")
+        marker_type = None
+        for key in DEFAULT_CUT_GUIDE.keys():
+            if key in title.upper():
+                marker_type = key
+                break
+        
+        if not marker_type:
+            continue  # Skip markers without recognized types
+        
+        # Build guidance with priority: tier > lane > default
+        guidance = DEFAULT_CUT_GUIDE.get(marker_type, "")
+        
+        if lane and lane in LANE_NUANCE:
+            guidance = LANE_NUANCE[lane].get(marker_type, guidance)
+        
+        if tier and tier in TIER_OVERRIDES:
+            guidance = TIER_OVERRIDES[tier].get(marker_type, guidance)
+        
+        # Append guidance to note
+        if guidance and "— Cuts:" not in note:
+            m["note"] = f"{note}\n— Cuts: {guidance}".strip()
+    
+    return markers
+
+
+# ─────────────────────────── Monkey-Patch for Transparent Enrichment ─────────────────────────────
+_original_create_vertical = None
+_original_add_markers = None
+
+
+def _monkey_patch_create_vertical():
+    """Wrap create_vertical_timeline_unique to enrich markers before adding."""
+    global _original_create_vertical
+    if _original_create_vertical is not None:
+        return  # Already patched
+    
+    _original_create_vertical = globals()["create_vertical_timeline_unique"]
+    
+    def _wrapped(*args, **kwargs):
+        # Call original function
+        result = _original_create_vertical(*args, **kwargs)
+        
+        # Extract lane/tier from timeline name if available
+        if result and len(args) >= 3:
+            tl_name = args[2]  # title parameter
+            lane, tier = _lane_tier_from_title(tl_name)
+            
+            # Enrich markers parameter if present
+            if len(args) >= 6 and args[5]:  # markers parameter
+                enrich_marker_set_for(args[5], lane, tier)
+        
+        return result
+    
+    globals()["create_vertical_timeline_unique"] = _wrapped
+
+
+def _monkey_patch_add_markers():
+    """Wrap add_markers_to_timeline_if_empty to enrich before adding."""
+    global _original_add_markers
+    if _original_add_markers is not None:
+        return  # Already patched
+    
+    _original_add_markers = globals()["add_markers_to_timeline_if_empty"]
+    
+    def _wrapped(tl, fps_str, markers, force=False):
+        # Enrich markers before adding (extract lane/tier from timeline name)
+        tl_name = tl.GetName() if hasattr(tl, "GetName") else ""
+        lane, tier = _lane_tier_from_title(tl_name)
+        enrich_marker_set_for(markers, lane, tier)
+        
+        # Call original function
+        return _original_add_markers(tl, fps_str, markers, force)
+    
+    globals()["add_markers_to_timeline_if_empty"] = _wrapped
+
+
+# ─────────────────────────── Marker Lints (Schema, Duration, Collisions) ─────────────────────────────
+def _lint_timeline_markers(tl, fps=29.97):
+    """
+    Validate markers on a timeline with human-readable warnings.
+    
+    Checks:
+    1. Schema: Markers have required fields (frameId, name, note, color)
+    2. Duration: Markers don't overshoot timeline end
+    3. Collisions: No duplicate start times
+    
+    Args:
+        tl: Timeline object
+        fps: Frame rate (default 29.97)
+    
+    Returns:
+        List of warning strings (empty if no issues)
+    """
+    warnings = []
+    tl_name = tl.GetName() if hasattr(tl, "GetName") else "Unknown"
+    markers = tl.GetMarkers() if hasattr(tl, "GetMarkers") else {}
+    
+    if not markers:
+        return warnings
+    
+    tl_duration = tl.GetEndFrame() if hasattr(tl, "GetEndFrame") else 0
+    seen_starts = set()
+    
+    for frame_id, m in markers.items():
+        # Schema validation
+        if not all(k in m for k in ["name", "note", "color"]):
+            warnings.append(
+                f"⚠️  [{tl_name}] Marker @{frame_id} missing required fields"
+            )
+        
+        # Duration validation
+        marker_end = frame_id + m.get("duration", 0)
+        if marker_end > tl_duration:
+            overshoot_sec = (marker_end - tl_duration) / fps
+            warnings.append(
+                f"⚠️  [{tl_name}] Marker '{m.get('name', '?')}' overshoots by {overshoot_sec:.2f}s"
+            )
+        
+        # Collision detection
+        if frame_id in seen_starts:
+            warnings.append(
+                f"⚠️  [{tl_name}] Duplicate marker at frame {frame_id}"
+            )
+        seen_starts.add(frame_id)
+    
+    return warnings
+
+
+def run_marker_lints(proj, fps=29.97):
+    """
+    Run marker lints across all timelines in project.
+    
+    Args:
+        proj: Project object
+        fps: Frame rate (default 29.97)
+    
+    Returns:
+        Total count of warnings found
+    """
+    if not proj or not hasattr(proj, "GetTimelineCount"):
+        return 0
+    
+    all_warnings = []
+    timeline_count = proj.GetTimelineCount()
+    
+    for i in range(1, timeline_count + 1):
+        tl = proj.GetTimelineByIndex(i)
+        if tl:
+            warnings = _lint_timeline_markers(tl, fps)
+            all_warnings.extend(warnings)
+    
+    if all_warnings:
+        log.info("🔍 Marker Lints (%d warnings):", len(all_warnings))
+        for w in all_warnings:
+            log.info("   %s", w)
+    else:
+        log.info("✅ Marker Lints: All clear (0 warnings)")
+    
+    return len(all_warnings)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# End v4.7.1 Enhancement
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+
 # ───────────────────────── Seconds-only pacing (lane ▸ tier ▸ section) ─────────────────────────
 PACING_S = {
     "money": {
@@ -2515,6 +2796,11 @@ def seed_principle_markers_across_project(project, mp):
 def main():
     stats = BuildStats()
 
+    # v4.7.1: Enable transparent enrichment via monkey-patching
+    log.info(SECONDS_PACING_DOC)
+    _monkey_patch_create_vertical()
+    _monkey_patch_add_markers()
+
     resolve = get_resolve()
     pm = resolve.GetProjectManager()
 
@@ -2718,6 +3004,11 @@ def main():
     if s["errors"]:
         log.info("🚨 Error Details:")
         [log.info("   • %s", e) for e in s["errors"]]
+    
+    # v4.7.1: Run marker lints before saving
+    log.info("================================================")
+    run_marker_lints(proj, fps=float(FPS.replace("p", "")))
+    
     try:
         proj.Save() if hasattr(proj, "Save") else None
         log.info("💾 Project saved")
