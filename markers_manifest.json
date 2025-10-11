@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "schema": "famo.resolve.markers/v1",
-  "generated_at": "2025-10-11T06:22:34Z",
-  "generated_at_utc": "2025-10-11T06:22:34Z",
+  "generated_at": "2025-10-11T06:46:36Z",
+  "generated_at_utc": "2025-10-11T06:46:36Z",
   "project_name": "kjkjj",
   "project_uuid": null,
   "fps": 29.97,
@@ -88,7 +88,7 @@
           "name": "INTERRUPT #2",
           "note": "Second micro jolt; invert framing or swap angle to avoid glide to the finish.\n\u2014 Cuts: \u22640.6s micro-jolt.",
           "color": "Pink",
-          "duration": 1,
+          "duration": 91,
           "custom_data": "",
           "flags": null
         }
@@ -176,7 +176,7 @@
           "name": "INTERRUPT #3",
           "note": "Penultimate jolt to prime the close.\n\u2014 Cuts: \u22640.6s micro-jolt.",
           "color": "Pink",
-          "duration": 1,
+          "duration": 106,
           "custom_data": "",
           "flags": null
         }
@@ -294,7 +294,7 @@
           "name": "FINAL PAYOFF / LOOP",
           "note": "Range 1.5\u20133.0s. Clean visual loop or crisp CTA.\n\u2014 Cuts: 0.9\u20131.3s; land on loopable motion.",
           "color": "Yellow",
-          "duration": 60,
+          "duration": 61,
           "custom_data": "",
           "flags": null
         }
@@ -359,7 +359,7 @@
           "name": "INTERRUPT #2",
           "note": "Second micro flip to avoid slide to credits.\n\u2014 Cuts: \u22640.6s micro-jolt.",
           "color": "Pink",
-          "duration": 1,
+          "duration": 91,
           "custom_data": "",
           "flags": null
         }
@@ -447,7 +447,7 @@
           "name": "INTERRUPT #3",
           "note": "Penultimate jolt to prime the close.\n\u2014 Cuts: \u22640.6s micro-jolt.",
           "color": "Pink",
-          "duration": 1,
+          "duration": 106,
           "custom_data": "",
           "flags": null
         }
@@ -565,7 +565,7 @@
           "name": "FINAL PAYOFF / LOOP",
           "note": "Range 1.5\u20133.0s. Clean visual loop or crisp CTA.\n\u2014 Cuts: 0.9\u20131.2s loop close.",
           "color": "Yellow",
-          "duration": 60,
+          "duration": 61,
           "custom_data": "",
           "flags": null
         }
@@ -1101,7 +1101,7 @@
           "name": "COMMIT / PAYOFF",
           "note": "Range 3\u20135s. Full-body reveal or clean style transition.\n\u2014 Cuts: 1.2\u20131.6s full-body; detail cut-ins \u22640.5s.",
           "color": "Green",
-          "duration": 120,
+          "duration": 121,
           "custom_data": "",
           "flags": null
         }
@@ -1169,7 +1169,7 @@
           "name": "DEVELOP",
           "note": "Range 6\u20138s. 1\u20132 beats: close-ups, pocket pulls, hem, shoe detail.\n\u2014 Cuts: 1.0\u20131.4s; 2 detail beats max.",
           "color": "Purple",
-          "duration": 209,
+          "duration": 210,
           "custom_data": "",
           "flags": null
         }
@@ -1257,7 +1257,7 @@
           "name": "FINAL PAYOFF / LOOP",
           "note": "Range 1.5\u20133.0s. Seamless loop or subtle CTA.\n\u2014 Cuts: 0.9\u20131.2s.",
           "color": "Yellow",
-          "duration": 60,
+          "duration": 61,
           "custom_data": "",
           "flags": null
         }
@@ -1758,7 +1758,7 @@
           "name": "COMMIT / PAYOFF",
           "note": "Range 3\u20135s. The clear takeaway or micro demo.\n\u2014 Cuts: 1.2\u20131.7s; overlay receipts \u22640.5s.",
           "color": "Green",
-          "duration": 120,
+          "duration": 121,
           "custom_data": "",
           "flags": null
         }
@@ -1826,7 +1826,7 @@
           "name": "DEVELOP",
           "note": "Range 6\u20138s. One supporting example; avoid tangents.\n\u2014 Cuts: 1.0\u20131.4s; single example.",
           "color": "Purple",
-          "duration": 209,
+          "duration": 210,
           "custom_data": "",
           "flags": null
         }
@@ -1914,7 +1914,7 @@
           "name": "FINAL PAYOFF / LOOP",
           "note": "Range 1.5\u20133.0s. Tight loop or ask.\n\u2014 Cuts: 0.9\u20131.2s.",
           "color": "Yellow",
-          "duration": 60,
+          "duration": 61,
           "custom_data": "",
           "flags": null
         }
@@ -2241,7 +2241,7 @@
           "name": "COMMIT / PAYOFF",
           "note": "Range 3\u20135s. Satisfying micro-resolution (arrive/complete/transition).\n\u2014 Cuts: 1.2\u20131.6s micro-resolution.",
           "color": "Green",
-          "duration": 120,
+          "duration": 121,
           "custom_data": "",
           "flags": null
         }
@@ -2309,7 +2309,7 @@
           "name": "DEVELOP",
           "note": "Range 6\u20138s. Texture beats (ambient, details).\n\u2014 Cuts: 1.0\u20131.4s.",
           "color": "Purple",
-          "duration": 209,
+          "duration": 210,
           "custom_data": "",
           "flags": null
         }
@@ -2397,7 +2397,7 @@
           "name": "FINAL PAYOFF / LOOP",
           "note": "Range 1.5\u20133.0s. Loopable exit/enter.\n\u2014 Cuts: 0.9\u20131.2s.",
           "color": "Yellow",
-          "duration": 60,
+          "duration": 61,
           "custom_data": "",
           "flags": null
         }
@@ -2898,7 +2898,7 @@
           "name": "COMMIT / PAYOFF",
           "note": "Range 3\u20135s. Small but satisfying musical 'click' (layer locks, groove snaps).\n\u2014 Cuts: 1.2\u20131.6s groove lock.",
           "color": "Green",
-          "duration": 120,
+          "duration": 121,
           "custom_data": "",
           "flags": null
         }
@@ -2966,7 +2966,7 @@
           "name": "DEVELOP",
           "note": "Range 6\u20138s. Add/remove tension: short fills, mute plays, knob rides.\n\u2014 Cuts: 1.0\u20131.4s; short fills \u22640.5s.",
           "color": "Purple",
-          "duration": 209,
+          "duration": 210,
           "custom_data": "",
           "flags": null
         }
@@ -3054,7 +3054,7 @@
           "name": "FINAL PAYOFF / LOOP",
           "note": "Range 1.5\u20133.0s. Loop land.\n\u2014 Cuts: 0.9\u20131.2s.",
           "color": "Yellow",
-          "duration": 60,
+          "duration": 61,
           "custom_data": "",
           "flags": null
         }

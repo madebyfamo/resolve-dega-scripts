@@ -15,17 +15,19 @@ What's new in v4.6
 - Tight marker borders (1-frame gaps) for visual clarity
 
 What's new in v4.5
-- Tiered marker templates (12s / 22s / 30s) added natively to every lane's Master Build
-- Richer marker Notes (research-informed) + explicit timing ranges
-- Safe re-seed: markers added only if a timeline has 0 markers (avoids dupes)
 """
 
 import datetime
+import json
 import logging
 import os
+import re
+import struct
 import sys
 import wave
-import struct
+from fractions import Fraction
+from contextlib import suppress
+from pathlib import Path
 
 
 # ───────────────────────── Basics / Logging ─────────────────────────
@@ -66,9 +68,10 @@ def setup_logger(name="dega_builder", level=logging.INFO):
 log = setup_logger()
 root = logging.getLogger()
 if not root.handlers:
-    for h in log.handlers:
-        root.addHandler(h)
+    for handler in log.handlers:
+        root.addHandler(handler)
     root.setLevel(log.level)
+
 
 # ───────────────────────── Resolve bootstrap ─────────────────────────
 try:
@@ -85,19 +88,19 @@ def get_resolve():
     _bmd = globals().get("bmd")
     if _bmd:
         try:
-            r = _bmd.scriptapp("Resolve")
-            if r:
+            resolve = _bmd.scriptapp("Resolve")
+            if resolve:
                 log.info("✅ Connected via bmd.scriptapp")
-                return r
-        except Exception as e:
-            log.warning(f"⚠️ bmd.scriptapp failed: {e}")
+                return resolve
+        except Exception as exc:
+            log.warning("⚠️ bmd.scriptapp failed: %s", exc)
     try:
-        r = dvr.scriptapp("Resolve") if dvr else None  # type: ignore
-        if r:
+        resolve = dvr.scriptapp("Resolve") if dvr else None  # type: ignore
+        if resolve:
             log.info("✅ Connected via DaVinciResolveScript")
-            return r
-    except Exception as e:
-        log.error(f"❌ DaVinciResolveScript failed: {e}")
+            return resolve
+    except Exception as exc:
+        log.error("❌ DaVinciResolveScript failed: %s", exc)
     log.error(
         "❌ Could not acquire Resolve API. Run from Resolve (Workspace ▸ Scripts)."
     )
@@ -154,7 +157,6 @@ AUDIO_TRACKS = [
 
 
 # ───────────────────────── Marker templates ─────────────────────────
-# Helper for concise marker dicts
 def _mm(when, color, name, dur, notes):
     return {
         "t": float(when),
@@ -165,7 +167,6 @@ def _mm(when, color, name, dur, notes):
     }
 
 
-# Color support/fallbacks per Resolve marker API variety
 _SUPPORTED_MARKER_COLORS = {
     "Red",
     "Yellow",
@@ -180,11 +181,7 @@ _SUPPORTED_MARKER_COLORS = {
 }
 _COLOR_FALLBACK = {"Magenta": "Pink", "Orange": "Yellow"}
 
-# Shared language guidelines reflected in Notes across lanes:
-# - Hooks anchor in 0–3s; interrupts are micro pattern breaks; commits/payoffs are clarity bursts
-# - Notes include timing *ranges* so you can stretch/contract safely without losing punch
 
-# MONEY (reference set — reused by MV)
 MARKERS_12 = [
     _mm(
         0.000,
@@ -229,6 +226,8 @@ MARKERS_12 = [
         "Range 0.3–1.0s. Button that either loops cleanly or gives one frictionless action.",
     ),
 ]
+
+
 MARKERS_22 = [
     _mm(
         0.000,
@@ -288,6 +287,8 @@ MARKERS_22 = [
         "Range 0.5–1.2s. Clean loop or minimal ask with on-screen affordance.",
     ),
 ]
+
+
 MARKERS_30 = [
     _mm(
         0.000,
@@ -1705,42 +1706,42 @@ def enrich_marker_set_for(markers, lane=None, tier=None):
     """
     Append cut guidance to each marker's note.
     Priority: TIER_OVERRIDES > LANE_NUANCE > DEFAULT_CUT_GUIDE
-    
+
     Args:
         markers: List of marker dicts with 'name' and 'note' keys
         lane: Lane name (e.g., "money", "mv", "fashion", etc.)
         tier: Tier name (e.g., "12s", "22s", "30s")
-    
+
     Returns:
         List of enriched marker dicts (modifies in place)
     """
     for m in markers:
         title = m.get("name", "")
         note = m.get("note", "")
-        
+
         # Extract marker type from title (e.g., "HOOK", "DRAW", "COMMIT / PAYOFF")
         marker_type = None
-        for key in DEFAULT_CUT_GUIDE.keys():
+        for key in DEFAULT_CUT_GUIDE:
             if key in title.upper():
                 marker_type = key
                 break
-        
+
         if not marker_type:
             continue  # Skip markers without recognized types
-        
+
         # Build guidance with priority: tier > lane > default
         guidance = DEFAULT_CUT_GUIDE.get(marker_type, "")
-        
+
         if lane and lane in LANE_NUANCE:
             guidance = LANE_NUANCE[lane].get(marker_type, guidance)
-        
+
         if tier and tier in TIER_OVERRIDES:
             guidance = TIER_OVERRIDES[tier].get(marker_type, guidance)
-        
+
         # Append guidance to note
         if guidance and "— Cuts:" not in note:
             m["note"] = f"{note}\n— Cuts: {guidance}".strip()
-    
+
     return markers
 
 
@@ -1754,24 +1755,32 @@ def _monkey_patch_create_vertical():
     global _original_create_vertical
     if _original_create_vertical is not None:
         return  # Already patched
-    
+
     _original_create_vertical = globals()["create_vertical_timeline_unique"]
-    
+
     def _wrapped(*args, **kwargs):
         # Call original function
         result = _original_create_vertical(*args, **kwargs)
-        
+
         # Extract lane/tier from timeline name if available
-        if result and len(args) >= 3:
-            tl_name = args[2]  # title parameter
-            lane, tier = _lane_tier_from_title(tl_name)
-            
+        if result:
+            tl_name = None
+            if len(args) >= 4:
+                tl_name = args[3]
+            elif "title" in kwargs:
+                tl_name = kwargs.get("title")
+            lane, tier = _lane_tier_from_title(tl_name or "")
+
             # Enrich markers parameter if present
-            if len(args) >= 6 and args[5]:  # markers parameter
-                enrich_marker_set_for(args[5], lane, tier)
-        
+            markers_arg = None
+            if len(args) >= 9:
+                markers_arg = args[8]
+            markers_arg = kwargs.get("markers", markers_arg)
+            if markers_arg:
+                enrich_marker_set_for(markers_arg, lane, tier)
+
         return result
-    
+
     globals()["create_vertical_timeline_unique"] = _wrapped
 
 
@@ -1780,18 +1789,18 @@ def _monkey_patch_add_markers():
     global _original_add_markers
     if _original_add_markers is not None:
         return  # Already patched
-    
+
     _original_add_markers = globals()["add_markers_to_timeline_if_empty"]
-    
+
     def _wrapped(tl, fps_str, markers, force=False):
         # Enrich markers before adding (extract lane/tier from timeline name)
         tl_name = tl.GetName() if hasattr(tl, "GetName") else ""
         lane, tier = _lane_tier_from_title(tl_name)
         enrich_marker_set_for(markers, lane, tier)
-        
+
         # Call original function
         return _original_add_markers(tl, fps_str, markers, force)
-    
+
     globals()["add_markers_to_timeline_if_empty"] = _wrapped
 
 
@@ -1799,36 +1808,36 @@ def _monkey_patch_add_markers():
 def _lint_timeline_markers(tl, fps=29.97):
     """
     Validate markers on a timeline with human-readable warnings.
-    
+
     Checks:
     1. Schema: Markers have required fields (frameId, name, note, color)
     2. Duration: Markers don't overshoot timeline end
     3. Collisions: No duplicate start times
-    
+
     Args:
         tl: Timeline object
         fps: Frame rate (default 29.97)
-    
+
     Returns:
         List of warning strings (empty if no issues)
     """
     warnings = []
     tl_name = tl.GetName() if hasattr(tl, "GetName") else "Unknown"
     markers = tl.GetMarkers() if hasattr(tl, "GetMarkers") else {}
-    
+
     if not markers:
         return warnings
-    
+
     tl_duration = tl.GetEndFrame() if hasattr(tl, "GetEndFrame") else 0
     seen_starts = set()
-    
+
     for frame_id, m in markers.items():
         # Schema validation
         if not all(k in m for k in ["name", "note", "color"]):
             warnings.append(
                 f"⚠️  [{tl_name}] Marker @{frame_id} missing required fields"
             )
-        
+
         # Duration validation
         marker_end = frame_id + m.get("duration", 0)
         if marker_end > tl_duration:
@@ -1836,47 +1845,45 @@ def _lint_timeline_markers(tl, fps=29.97):
             warnings.append(
                 f"⚠️  [{tl_name}] Marker '{m.get('name', '?')}' overshoots by {overshoot_sec:.2f}s"
             )
-        
+
         # Collision detection
         if frame_id in seen_starts:
-            warnings.append(
-                f"⚠️  [{tl_name}] Duplicate marker at frame {frame_id}"
-            )
+            warnings.append(f"⚠️  [{tl_name}] Duplicate marker at frame {frame_id}")
         seen_starts.add(frame_id)
-    
+
     return warnings
 
 
 def run_marker_lints(proj, fps=29.97):
     """
     Run marker lints across all timelines in project.
-    
+
     Args:
         proj: Project object
         fps: Frame rate (default 29.97)
-    
+
     Returns:
         Total count of warnings found
     """
     if not proj or not hasattr(proj, "GetTimelineCount"):
         return 0
-    
+
     all_warnings = []
     timeline_count = proj.GetTimelineCount()
-    
+
     for i in range(1, timeline_count + 1):
         tl = proj.GetTimelineByIndex(i)
         if tl:
             warnings = _lint_timeline_markers(tl, fps)
             all_warnings.extend(warnings)
-    
+
     if all_warnings:
         log.info("🔍 Marker Lints (%d warnings):", len(all_warnings))
         for w in all_warnings:
             log.info("   %s", w)
     else:
         log.info("✅ Marker Lints: All clear (0 warnings)")
-    
+
     return len(all_warnings)
 
 
@@ -1908,17 +1915,19 @@ def _safe_delete_marker_at_frame(tl, frame: int) -> bool:
     return False
 
 
-def _safe_update_marker(tl, fps_float: float, frame: int, m: dict, new_notes: str) -> bool:
+def _safe_update_marker(
+    tl, fps_float: float, frame: int, m: dict, new_notes: str
+) -> bool:
     """
     Best-effort 'update': delete then re-add with same color/name/duration but enriched notes.
-    
+
     Args:
         tl: Timeline object
         fps_float: Frame rate
         frame: Frame ID of marker
         m: Original marker dict
         new_notes: Enriched notes to replace
-    
+
     Returns:
         True if update succeeded
     """
@@ -1934,10 +1943,10 @@ def _safe_update_marker(tl, fps_float: float, frame: int, m: dict, new_notes: st
 def _collect_markers_generic(tl):
     """
     Return list of tuples (frame, marker_dict). Works across API variants.
-    
+
     Args:
         tl: Timeline object
-    
+
     Returns:
         List of (frame_id, marker_dict) tuples
     """
@@ -1988,22 +1997,22 @@ def _normalize_head(name: str) -> str:
         "SECOND HOOK" → "SECOND HOOK"
     """
     name_upper = (name or "").upper()
-    
+
     # Check exact matches first
     if name_upper in DEFAULT_CUT_GUIDE:
         return name_upper
-    
+
     # Check for partial matches
     for key in DEFAULT_CUT_GUIDE:
         if key in name_upper:
             return key
-    
+
     # Special cases
     if "PAYOFF" in name_upper:
         return "PAYOFF"
     if "COMMIT" in name_upper:
         return "COMMIT"
-    
+
     return ""
 
 
@@ -2032,16 +2041,16 @@ def _tier_from_title(title: str) -> str:
 def enrich_markers_in_existing_timeline(tl, fps_float: float = 29.97) -> int:
     """
     Walk existing markers; if they lack a '— Cuts:' line, enrich in-place.
-    
+
     This is the post-pass enrichment that catches:
     - Markers from previous script runs (pre-v4.7.2)
     - Hand-added markers
     - Principle timeline markers (Scenes/Segments, ShotFX, etc.)
-    
+
     Args:
         tl: Timeline object
         fps_float: Frame rate (default 29.97)
-    
+
     Returns:
         Count of markers updated
     """
@@ -2049,7 +2058,7 @@ def enrich_markers_in_existing_timeline(tl, fps_float: float = 29.97) -> int:
         title = tl.GetName() or ""
     except Exception:
         title = ""
-    
+
     lane = _lane_from_title(title)
     tier = _tier_from_title(title)
 
@@ -2057,12 +2066,12 @@ def enrich_markers_in_existing_timeline(tl, fps_float: float = 29.97) -> int:
     for frame, m in _collect_markers_generic(tl):
         name = m.get("name") or m.get("Name") or ""
         notes = m.get("note") or m.get("notes") or m.get("Notes") or ""
-        
+
         if _has_cut_line(notes):
             continue  # Already enriched
 
         head = _normalize_head(name)
-        
+
         # Pick a line using same logic as seeding (TIER > LANE > DEFAULT)
         line = None
         if head in DEFAULT_CUT_GUIDE:
@@ -2077,27 +2086,28 @@ def enrich_markers_in_existing_timeline(tl, fps_float: float = 29.97) -> int:
             line = DEFAULT_CUT_GUIDE.get("DEVELOP", "Cut every ~1.1s; chain 2–3 beats.")
 
         new_notes = _append_cut_line(notes, line)
-        if new_notes != notes:
-            if _safe_update_marker(tl, fps_float, frame, m, new_notes):
-                updated += 1
-    
+        if new_notes != notes and _safe_update_marker(
+            tl, fps_float, frame, m, new_notes
+        ):
+            updated += 1
+
     return updated
 
 
 def enrich_all_timelines_postpass(project, fps_str: str = "29.97"):
     """
     Post-pass enrichment: walk ALL timelines and upgrade any missing markers.
-    
+
     This ensures TRUE 100% enrichment across:
     - Masters (12s/22s/30s)
     - Principles (Scenes/Segments, ShotFX, Interview/Talking, Look/Fashion, Chapter/DIL, Section/Cook-Ups)
     - Existing markers from previous runs
     - Hand-added markers
-    
+
     Args:
         project: Project object
         fps_str: Frame rate string (e.g., "29.97p")
-    
+
     Returns:
         Total count of markers updated
     """
@@ -2105,7 +2115,7 @@ def enrich_all_timelines_postpass(project, fps_str: str = "29.97"):
         fps = float(fps_str.replace("p", ""))
     except Exception:
         fps = 29.97
-    
+
     try:
         cnt = int(project.GetTimelineCount() or 0)
     except Exception:
@@ -2116,23 +2126,25 @@ def enrich_all_timelines_postpass(project, fps_str: str = "29.97"):
         tl = project.GetTimelineByIndex(i)
         if not tl:
             continue
-        
+
         try:
             name = tl.GetName() or ""
         except Exception:
             name = f"<Timeline#{i}>"
-        
+
         upd = enrich_markers_in_existing_timeline(tl, fps_float=fps)
         total_updated += upd
-        
+
         if upd:
             log.info("✨ Enriched %d existing markers on '%s'", upd, name)
-    
+
     if total_updated == 0:
         log.info("✅ Post-pass enrichment: no markers needed updates.")
     else:
-        log.info("✅ Post-pass enrichment complete: %d markers updated total.", total_updated)
-    
+        log.info(
+            "✅ Post-pass enrichment complete: %d markers updated total.", total_updated
+        )
+
     return total_updated
 
 
@@ -2299,7 +2311,7 @@ PACING_S = {
 
 def _lane_tier_from_title(title: str):
     """Extract lane and tier from timeline title."""
-    t = (title or "").lower()
+    t = str(title or "").lower()
     if "money master" in t:
         return "money", ("12s" if "12s" in t else "22s" if "22s" in t else "30s")
     if "mv master" in t:
@@ -2571,29 +2583,23 @@ def ensure_tracks_named(
     # Name tracks
     if kind == "video":
         for i, label in enumerate(target, 1):
-            try:
+            with suppress(Exception):
                 tl.SetTrackName("video", i, label)
-            except Exception:
-                pass
     else:
         for i, label in enumerate(target, 1):
-            try:
+            with suppress(Exception):
                 tl.SetTrackName("audio", i, label)
-            except Exception:
-                pass
         # subtitle once
         try:
             subcnt = int(tl.GetTrackCount("subtitle"))
         except Exception:
             subcnt = 0
         if subcnt == 0:
-            try:
+            with suppress(Exception):
                 tl.AddTrack("subtitle")
                 tl.SetTrackName("subtitle", 1, "CC | English")
                 if stats:
                     stats.tracks_created += 1
-            except Exception:
-                pass
 
 
 def safe_set_current_folder(mp, folder):
@@ -2636,6 +2642,611 @@ def _butt_join_markers(markers, fps_str):
     return ms
 
 
+# ───────────────────────── Anchor suppression / exact-second retime ─────────────────────────
+_ANCHOR_NAME_PAT = re.compile(r"(?i)\b(anchor|5\s*min|300s)\b")
+_QC_MARKER_PAT = re.compile(r"(?i)\b(qc|placeholder)\b")
+_DROPFRAME_KEYS = ("timelineDropFrameTimecode", "timelineDropFramePlayback")
+_AUDIT_FILENAME = "snap_audit.json"
+
+
+def _now_iso():
+    return datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+
+def _audit_path() -> Path:
+    try:
+        base = Path(__file__).resolve().parent
+    except Exception:
+        base = Path(os.getcwd())
+    return base / _AUDIT_FILENAME
+
+
+def _write_snap_audit(payload):
+    path = _audit_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    try:
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+        log.info("🧾 Snap audit written: %s", path)
+        return str(path)
+    except Exception as exc:
+        log.debug("Snap audit write skipped: %s", exc)
+    return None
+
+
+def _fps_from_str(fps_str):
+    try:
+        return float(str(fps_str).replace("p", ""))
+    except Exception:
+        return 29.97
+
+
+def _get_markers_dict(tl):
+    """Return {frame:int -> marker_dict} safely."""
+    with suppress(Exception):
+        mk = tl.GetMarkers()
+        if isinstance(mk, dict):
+            return {int(k): v for k, v in mk.items()}
+        if isinstance(mk, list):
+            out = {}
+            for entry in mk:
+                fr = int(entry.get("frame", 0))
+                out[fr] = entry
+            return out
+    return {}
+
+
+def _delete_marker_at_frame(tl, frame):
+    with suppress(Exception):
+        return bool(tl.DeleteMarkerAtFrame(int(frame)))
+    return False
+
+
+def _add_marker_multiapi(tl, frame, color, name, note, dur_frames):
+    palette = [
+        color,
+        "Yellow",
+        "Blue",
+        "Green",
+        "Red",
+        "Purple",
+        "Cyan",
+        "Orange",
+        "Pink",
+        "White",
+        "Black",
+    ]
+    for col in palette:
+        with suppress(Exception):
+            if tl.AddMarker(int(frame), col, name, note, int(dur_frames), ""):
+                return True
+        with suppress(Exception):
+            if tl.AddMarker(int(frame), col, name, note, int(dur_frames)):
+                return True
+    return False
+
+
+def enforce_drop_frame_everywhere(project, fps_str):
+    fps = _fps_from_str(fps_str)
+    target = f"{fps:.6f}"
+    project_actions = []
+    for key, value in (
+        ("timelineFrameRate", target),
+        ("timelinePlaybackFrameRate", target),
+        ("timelineDropFrameTimecode", "1"),
+    ):
+        with suppress(Exception):
+            project.SetSetting(key, value)
+            project_actions.append({key: value})
+
+    timeline_actions = []
+    tcnt = 0
+    with suppress(Exception):
+        tcnt = int(project.GetTimelineCount() or 0)
+
+    for idx in range(1, (tcnt or 0) + 1):
+        tl = project.GetTimelineByIndex(idx)
+        if not tl:
+            continue
+        title = ""
+        with suppress(Exception):
+            title = tl.GetName() or f"Timeline {idx}"
+
+        settings = {}
+        with suppress(Exception):
+            settings = tl.GetSetting() or {}
+
+        updates = []
+        for key, value in (
+            ("timelineFrameRate", target),
+            ("timelinePlaybackFrameRate", target),
+        ):
+            need = True
+            try:
+                need = abs(float(settings.get(key, 0.0)) - fps) > 1e-3
+            except Exception:
+                need = str(settings.get(key, "")).strip() != value
+            if need:
+                with suppress(Exception):
+                    tl.SetSetting(key, value)
+                updates.append({key: value})
+
+        for key in _DROPFRAME_KEYS:
+            current = str(settings.get(key, "")).strip()
+            if current != "1":
+                with suppress(Exception):
+                    tl.SetSetting(key, "1")
+                updates.append({key: "1"})
+
+        if updates:
+            timeline_actions.append({"timeline": title, "updates": updates})
+
+    return {"project": project_actions, "timelines": timeline_actions}
+
+
+def _tier_spec_from_title(title: str):
+    t = (title or "").lower()
+    if "— 12s" in t or " 12s " in t or t.endswith(" 12s") or " 12s —" in t:
+        return 12.0
+    if "— 22s" in t or " 22s " in t or t.endswith(" 22s") or " 22s —" in t:
+        return 22.0
+    if "— 30s" in t or " 30s " in t or t.endswith(" 30s") or " 30s —" in t:
+        return 30.0
+    return None
+
+
+def _is_master_title(title: str) -> bool:
+    t = (title or "").lower()
+    return (
+        t.startswith("money master")
+        or t.startswith("mv master")
+        or t.startswith("th master")
+        or t.startswith("fashion master")
+        or t.startswith("dil master")
+        or t.startswith("cook-up master")
+        or (" master —" in t)
+    )
+
+
+_CANON_BANDS = {
+    12.0: [
+        ("HOOK", 3.0, "Red"),
+        ("DRAW", 5.0, "Orange"),
+        ("COMMIT / PAYOFF", 4.0, "Green"),
+        ("LOOP / CTA", 0.0, "Yellow"),
+    ],
+    22.0: [
+        ("HOOK", 3.0, "Red"),
+        ("DRAW", 5.0, "Orange"),
+        ("COMMIT / PAYOFF #1", 4.0, "Green"),
+        ("SECOND HOOK", 3.0, "Blue"),
+        ("DEVELOP", 7.0, "Purple"),
+        ("LOOP / CTA", 0.0, "Yellow"),
+    ],
+    30.0: [
+        ("HOOK", 3.0, "Red"),
+        ("DRAW", 5.0, "Orange"),
+        ("COMMIT / PAYOFF #1", 4.0, "Green"),
+        ("SECOND HOOK", 3.0, "Blue"),
+        ("DEVELOP A", 7.0, "Purple"),
+        ("DEVELOP B", 6.0, "Purple"),
+        ("FINAL PAYOFF / LOOP", 2.0, "Yellow"),
+    ],
+}
+
+
+def _update_marker_in_place(
+    tl, old_frame, new_frame, color, name, note, dur_frames, existing_dur
+):
+    if int(old_frame) == int(new_frame) and int(existing_dur or 0) == int(dur_frames):
+        return True
+    _delete_marker_at_frame(tl, old_frame)
+    return _add_marker_multiapi(tl, new_frame, color, name, note, dur_frames)
+
+
+def _pad_last_macro_to_end(tl, fps_float: float, tier_end_sec: float = 30.0) -> bool:
+    micro_prefixes = {"interrupt", "loop / cta", "final payoff / loop"}
+    end_frame = int(round(tier_end_sec * fps_float))
+
+    markers = _get_markers_dict(tl)
+    if not markers:
+        return False
+
+    items = []
+    for fr, marker in markers.items():
+        name = (marker.get("name") or "").strip()
+        dur_raw = marker.get("duration") or marker.get("durationFrames")
+        try:
+            dur = int(round(float(dur_raw)))
+        except Exception:
+            dur = int(dur_raw or 0)
+        color = marker.get("color") or "Red"
+        note = marker.get("note") or marker.get("notes") or ""
+        items.append((int(fr), name, color, note, dur))
+
+    if not items:
+        return False
+
+    items.sort(key=lambda x: x[0])
+
+    last_macro = None
+    for fr, name, color, note, dur in reversed(items):
+        nlow = name.lower()
+        if dur <= 0 and any(nlow.startswith(p) for p in micro_prefixes):
+            continue
+        last_macro = (fr, name, color, note, dur)
+        break
+
+    if not last_macro:
+        return False
+
+    fr, name, color, note, dur = last_macro
+    current_end = fr + max(0, dur)
+    if current_end >= end_frame:
+        return False
+
+    new_dur = max(0, end_frame - fr)
+    if new_dur == dur:
+        return False
+
+    _delete_marker_at_frame(tl, fr)
+    added = _add_marker_multiapi(tl, fr, color, name, note, new_dur)
+    return bool(added)
+
+
+# ───────────────────────── Terminal LOOP/CTA enforcement ─────────────────────────
+_TERMINAL_TIER_SECONDS = {
+    12.0: 12.0,
+    22.0: 22.0,
+    30.0: 30.0,
+}
+
+
+def _tier_seconds_from_title(title: str) -> float | None:
+    tier = _tier_spec_from_title(title)
+    if tier in _TERMINAL_TIER_SECONDS:
+        return tier
+    text = (title or "").lower()
+    if "12s" in text and "29.97" in text:
+        return 12.0
+    if "22s" in text and "29.97" in text:
+        return 22.0
+    if "30s" in text and "29.97" in text:
+        return 30.0
+    if "(ig short" in text:
+        return 12.0
+    if "(ig mid" in text:
+        return 22.0
+    if "(ig upper" in text:
+        return 30.0
+    return None
+
+
+def _sec_to_frame_exact(sec: float, fps: float) -> int:
+    try:
+        return int(round(float(Fraction(str(sec)) * Fraction(str(fps)))))
+    except Exception:
+        return int(round(sec * fps))
+
+
+def _has_loop_at_frame(markers: dict[int, dict], frame: int) -> bool:
+    for fr, marker in markers.items():
+        if fr != frame:
+            continue
+        name = (marker.get("name") or "").lower()
+        if name.startswith("loop / cta") or name.startswith("loop") or "cta" in name:
+            return True
+    return False
+
+
+def _marker_span_covers(marker: dict, start_frame: int, target_frame: int) -> bool:
+    dur_raw = marker.get("duration") or marker.get("durationFrames") or 0
+    try:
+        dur = int(dur_raw)
+    except Exception:
+        dur = int(float(dur_raw) if dur_raw else 0)
+    if dur <= 0:
+        return start_frame == target_frame
+    return start_frame <= target_frame < start_frame + dur
+
+
+def _find_covering_marker(markers: dict[int, dict], target_frame: int):
+    for fr, marker in markers.items():
+        if _marker_span_covers(marker, fr, target_frame):
+            return fr, marker
+    return None
+
+
+def _readd_marker_with_duration(
+    tl, frame: int, marker: dict, new_duration: int
+) -> bool:
+    name = (marker.get("name") or "").strip()
+    note = marker.get("note") or marker.get("notes") or ""
+    color = marker.get("color") or "Yellow"
+    with suppress(Exception):
+        tl.DeleteMarkerAtFrame(int(frame))
+    return _add_marker_multiapi(tl, frame, color, name, note, max(0, int(new_duration)))
+
+
+def _maybe_snap_timeline_end_exact(tl, end_frame: int) -> None:
+    with suppress(Exception):
+        setter = getattr(tl, "SetEndFrame", None)
+        if setter:
+            setter(int(end_frame))
+
+
+def enforce_terminal_loop_cta_exact(project, fps_str: str):
+    fps_float = _fps_from_str(fps_str)
+    try:
+        timeline_count = int(project.GetTimelineCount() or 0)
+    except Exception:
+        timeline_count = 0
+
+    for idx in range(1, timeline_count + 1):
+        tl = project.GetTimelineByIndex(idx)
+        if not tl:
+            continue
+
+        with suppress(Exception):
+            title = tl.GetName() or ""
+        if not title or not _is_master_title(title):
+            continue
+
+        tier_seconds = _tier_seconds_from_title(title)
+        if tier_seconds is None:
+            continue
+
+        end_frame = _sec_to_frame_exact(tier_seconds, fps_float)
+        _maybe_snap_timeline_end_exact(tl, end_frame)
+
+        markers = _get_markers_dict(tl)
+        if not markers:
+            continue
+
+        # Stretch the final macro so the tier's terminal frame is covered.
+        last_frame = max(markers.keys())
+        last_marker = markers[last_frame]
+        current_covers = _marker_span_covers(last_marker, last_frame, end_frame)
+        desired_duration = max(1, end_frame - last_frame + 1)
+        dur_raw = last_marker.get("duration") or last_marker.get("durationFrames") or 0
+        try:
+            current_duration = int(dur_raw)
+        except Exception:
+            current_duration = int(float(dur_raw) if dur_raw else 0)
+
+        # If the last marker already covers the end frame, keep it. Otherwise stretch it.
+        if not current_covers and desired_duration != current_duration:
+            stretched = _readd_marker_with_duration(
+                tl,
+                last_frame,
+                last_marker,
+                desired_duration,
+            )
+            if stretched:
+                markers = _get_markers_dict(tl)
+                last_marker = markers.get(last_frame, last_marker)
+
+        # Re-check coverage after attempting to stretch.
+        if _marker_span_covers(last_marker, last_frame, end_frame):
+            continue
+
+        # Fall back to planting a zero-length LOOP/CTA marker precisely on the terminal frame.
+        if _add_marker_multiapi(tl, end_frame, "Yellow", "LOOP / CTA", "", 0):
+            continue
+        # If Resolve rejects the exact frame (e.g. floating rounding), drop one frame back with a 2f duration.
+        _add_marker_multiapi(
+            tl,
+            max(0, end_frame - 1),
+            "Yellow",
+            "LOOP / CTA",
+            "",
+            max(2, end_frame - max(0, end_frame - 1) + 1),
+        )
+
+
+def strict_snap_master_timeline(tl, fps_float: float, audit_records=None):
+    try:
+        title = tl.GetName() or ""
+    except Exception:
+        title = ""
+    if not _is_master_title(title):
+        return False
+
+    tier = _tier_spec_from_title(title)
+    if not tier:
+        return False
+
+    recipe = _CANON_BANDS.get(tier, [])
+    if not recipe:
+        return False
+
+    markers = _get_markers_dict(tl)
+    if not markers:
+        return False
+
+    by_name = {}
+    for frame_id, marker in markers.items():
+        name = (marker.get("name") or "").strip()
+        if not name or name in by_name:
+            continue
+        by_name[name] = (int(frame_id), marker)
+
+    adjustments = []
+    missing = []
+    cursor_sec = 0.0
+
+    for macro_name, dur_sec, default_color in recipe:
+        if dur_sec == 0.0:
+            start_sec = tier
+            end_sec = tier
+        else:
+            start_sec = cursor_sec
+            end_sec = start_sec + dur_sec
+
+        target_frame = _sec_to_frames(start_sec, fps_float)
+        target_dur = 0 if dur_sec == 0.0 else _sec_to_frames(dur_sec, fps_float)
+
+        match_key = None
+        for candidate in by_name:
+            if candidate.upper().startswith(macro_name.upper()):
+                match_key = candidate
+                break
+
+        if not match_key:
+            missing.append(macro_name)
+            cursor_sec = end_sec
+            continue
+
+        old_frame, marker = by_name[match_key]
+        note = marker.get("note") or marker.get("notes") or ""
+        color = marker.get("color") or default_color
+        dur_raw = marker.get("duration") or marker.get("durationFrames")
+        try:
+            existing_dur = int(round(float(dur_raw)))
+        except Exception:
+            existing_dur = int(dur_raw or 0)
+
+        if (
+            int(old_frame) != int(target_frame) or int(existing_dur) != int(target_dur)
+        ) and _update_marker_in_place(
+            tl,
+            old_frame,
+            target_frame,
+            color,
+            match_key,
+            note,
+            target_dur,
+            existing_dur,
+        ):
+            adjustments.append(
+                {
+                    "macro": match_key,
+                    "old_frame": int(old_frame),
+                    "new_frame": int(target_frame),
+                    "old_duration": int(existing_dur),
+                    "new_duration": int(target_dur),
+                }
+            )
+
+        cursor_sec = end_sec
+
+    padded = False
+    if abs(tier - 30.0) < 0.01:
+        padded = _pad_last_macro_to_end(tl, fps_float, tier)
+
+    if audit_records is not None and (adjustments or missing or padded):
+        audit_records.append(
+            {
+                "timeline": title,
+                "tier": tier,
+                "adjustments": adjustments,
+                "missing_macros": missing,
+                "padded_endcap": padded,
+                "marker_count": len(markers),
+            }
+        )
+
+    return bool(adjustments or padded)
+
+
+def strict_snap_all_masters(project, fps_str, audit_records=None):
+    fps = _fps_from_str(fps_str)
+    records = audit_records if audit_records is not None else []
+    tcnt = 0
+    with suppress(Exception):
+        tcnt = int(project.GetTimelineCount() or 0)
+
+    for idx in range(1, (tcnt or 0) + 1):
+        tl = project.GetTimelineByIndex(idx)
+        if not tl:
+            continue
+        try:
+            strict_snap_master_timeline(tl, fps, records)
+        except Exception as exc:
+            try:
+                name = tl.GetName() or f"Timeline {idx}"
+            except Exception:
+                name = f"Timeline {idx}"
+            records.append({"timeline": name, "error": str(exc)})
+
+    return records
+
+
+def cleanup_master_anchor_markers(project):
+    results = []
+    tcnt = 0
+    with suppress(Exception):
+        tcnt = int(project.GetTimelineCount() or 0)
+
+    for idx in range(1, (tcnt or 0) + 1):
+        tl = project.GetTimelineByIndex(idx)
+        if not tl:
+            continue
+        try:
+            title = tl.GetName() or ""
+        except Exception:
+            title = ""
+        if not _is_master_title(title):
+            continue
+
+        markers = _get_markers_dict(tl)
+        if not markers:
+            continue
+
+        removed = 0
+        removed_names = []
+        end_frame = None
+        with suppress(Exception):
+            end_frame = int(tl.GetEndFrame())
+
+        for frame_id, marker in list(markers.items()):
+            name = (marker.get("name") or "").strip()
+            if not name:
+                continue
+
+            should_remove = False
+            if _ANCHOR_NAME_PAT.search(name) and (
+                end_frame is None or frame_id >= end_frame - 1
+            ):
+                should_remove = True
+            if not should_remove and _QC_MARKER_PAT.search(name):
+                should_remove = True
+
+            if should_remove and _delete_marker_at_frame(tl, frame_id):
+                removed += 1
+                removed_names.append(name)
+
+        if removed:
+            results.append(
+                {"timeline": title, "removed": removed, "names": removed_names}
+            )
+
+    return results
+
+
+def run_master_snap_cleanup(project, fps_str):
+    audit_payload = {
+        "generated_at": _now_iso(),
+        "project": "",
+        "fps": fps_str,
+    }
+
+    with suppress(Exception):
+        audit_payload["project"] = project.GetName() or ""
+
+    audit_payload["drop_frame"] = enforce_drop_frame_everywhere(project, fps_str)
+    audit_payload["snap_results"] = strict_snap_all_masters(project, fps_str)
+    audit_payload["anchor_cleanup"] = cleanup_master_anchor_markers(project)
+
+    path = _write_snap_audit(audit_payload)
+    if path:
+        audit_payload["audit_path"] = path
+
+    return audit_payload
+
+
 def ensure_min_duration(dur_frames):
     """Guard for Resolve 20.2+ which requires duration >= 1 frame."""
     return max(1, int(dur_frames or 1))
@@ -2663,7 +3274,7 @@ def _add_marker_safe(tl, frame, color, name, note, dur_frames):
         try:
             ok3 = tl.AddMarker(frame, color, name, note, dur_frames)
             if ok3:
-                log.debug(f"      ✓ AddMarker succeeded (5-arg)")
+                log.debug("      ✓ AddMarker succeeded (5-arg)")
                 return True
             log.debug(
                 f"      ⚠️  AddMarker failed (5-arg): frame={frame}, color={color}"
@@ -2757,17 +3368,24 @@ def add_markers_to_timeline_if_empty(tl, fps_str, markers, force=False):
         log.info("   ↻ Markers present (%d) — skipping re-seed", existing)
         return 0
 
-    # Debug: log what markers were provided
-    marker_count = len(markers or [])
+    # Filter out far-future anchor markers; silent-clip seed assist covers duration
+    candidate_markers = markers or []
+    cleaned_markers = [
+        m
+        for m in candidate_markers
+        if not _ANCHOR_NAME_PAT.search(m.get("name") or "")
+        and not _QC_MARKER_PAT.search(m.get("name") or "")
+    ]
+
+    marker_count = len(cleaned_markers)
     if marker_count == 0:
         log.debug("   ⚠️  No markers provided for: %s", tl.GetName())
         return 0
 
     log.info("   🏷️  Adding %d principle markers to: %s", marker_count, tl.GetName())
 
-    # CRITICAL: Add markers in REVERSE time order (furthest first)
-    # This ensures the anchor marker at 299s establishes timeline duration FIRST
-    sorted_markers = sorted(markers or [], key=lambda m: m["t"], reverse=True)
+    # Add markers in reverse-time order to keep Resolve happy with long durations
+    sorted_markers = sorted(cleaned_markers, key=lambda m: m["t"], reverse=True)
 
     added = 0
     for m in sorted_markers:
@@ -2810,7 +3428,7 @@ def set_project_defaults(project, w, h, fps):
         project.SetSetting("timelineResolutionHeight", str(h))
         project.SetSetting("timelinePlaybackFrameRate", str(fps))
         project.SetSetting("timelineFrameRate", str(fps))
-        project.SetSetting("timelineDropFrameTimecode", "0")
+        project.SetSetting("timelineDropFrameTimecode", "1")
         project.SetSetting("timelineInterlaceProcessing", "0")
     except Exception as e:
         log.error("❌ Failed to set project defaults: %s", e)
@@ -2821,10 +3439,8 @@ def restore_project_defaults(project, prev):
     for k, v in prev.items():
         if v is None:
             continue
-        try:
+        with suppress(Exception):
             project.SetSetting(k, v)
-        except Exception:
-            pass
 
 
 def create_vertical_timeline(
@@ -2866,6 +3482,10 @@ def create_vertical_timeline(
             add_markers_to_timeline_if_empty(tl, FPS, markers)
         except Exception as e:
             log.debug(f"⚠️ Marker add failed for {title}: {e}")
+        try:
+            strict_snap_master_timeline(tl, _fps_from_str(FPS))
+        except Exception as e:
+            log.debug(f"Strict snap defer on {title}: {e}")
     return tl
 
 
@@ -2893,6 +3513,10 @@ def create_vertical_timeline_unique(
                     upgrade_existing_track_labels(tl)
                     if markers:
                         add_markers_to_timeline_if_empty(tl, FPS, markers)
+                        try:
+                            strict_snap_master_timeline(tl, _fps_from_str(FPS))
+                        except Exception as e:
+                            log.debug(f"Strict snap defer on {title}: {e}")
                     break
         except Exception:
             pass
@@ -3067,7 +3691,7 @@ def main():
 
     project_name = proj.GetName()
     log.info(f"🎯 Project: {project_name}")
-    log.info(f"� Format: {WIDTH}×{HEIGHT} @ {FPS}fps")
+    log.info(f"📐 Format: {WIDTH}×{HEIGHT} @ {FPS}fps")
     log.info(f"📊 Structure: {len(TOP_BINS)} top bins, {len(PILLARS)} pillars")
 
     mp = proj.GetMediaPool()
@@ -3259,18 +3883,33 @@ def main():
     if s["errors"]:
         log.info("🚨 Error Details:")
         [log.info("   • %s", e) for e in s["errors"]]
-    
+
     # v4.7.1: Run marker lints before saving
     log.info("================================================")
     run_marker_lints(proj, fps=float(FPS.replace("p", "")))
-    
+
     # v4.7.2: Post-pass enrichment for TRUE 100% coverage
     log.info("================================================")
     try:
         enrich_all_timelines_postpass(proj, fps_str=FPS)
     except Exception as e:
         log.debug("Post-pass enrichment skipped: %s", e)
-    
+
+    log.info("================================================")
+    try:
+        audit = run_master_snap_cleanup(proj, FPS)
+        log.info("✨ Drop-frame normalized, masters snapped, anchors cleaned")
+        if audit.get("audit_path"):
+            log.info("🧾 Snap audit: %s", audit["audit_path"])
+    except Exception as e:
+        log.debug("Master snap cleanup skipped: %s", e)
+
+    try:
+        enforce_terminal_loop_cta_exact(proj, FPS)
+        log.info("🔒 Terminal LOOP/CTA enforced on all masters (exact-second).")
+    except Exception as e:
+        log.warning(f"Terminal LOOP/CTA pass skipped: {e}")
+
     try:
         proj.Save() if hasattr(proj, "Save") else None
         log.info("💾 Project saved")
