@@ -1,0 +1,441 @@
+{
+  "summary": {
+    "project": {
+      "name": "kjkjj",
+      "manifest_project": "kjkjj",
+      "uuid": null,
+      "fps": 29.97,
+      "drop_frame": true,
+      "manifest_uuid": null,
+      "manifest_fps": 29.97,
+      "manifest_drop_frame": true
+    },
+    "timelines_checked": 67,
+    "warnings": 0,
+    "errors": 0,
+    "frame_tolerance": 1,
+    "generated_at": "2025-10-11T06:04:57Z",
+    "generated_at_utc": "2025-10-11T06:04:57Z",
+    "manifest": {
+      "schema": "famo.resolve.markers/v1",
+      "schema_version": "1.0",
+      "markers_total_declared": 332,
+      "markers_total_counted": 332,
+      "tier_counts_declared": {
+        "12s": 26,
+        "22s": 40,
+        "30s": 54
+      },
+      "tier_counts_counted": {
+        "12s": 26,
+        "22s": 40,
+        "30s": 54
+      }
+    }
+  },
+  "details": [
+    {
+      "timeline": "01 | \ud83d\udcb0 The Money \u2014 \u23f1 29.97p \u2022 \u2301 709/2.4 \u2022 \ud83d\udcd0 2160\u00d73840 \u2022 \ud83c\udf9a v01",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "01 | \ud83d\udcb0 The Money (Render-Only Nest) \u2014 QC \u2022 burn-ins",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Money Master \u2014 12s (IG short) \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Money Master \u2014 22s (IG mid) \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Money Master \u2014 30s (IG upper) \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "MV Master \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "MV Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "MV Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "MV Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Segment \u2014 Hook Performance \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Segment \u2014 Verse Performance \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Segment \u2014 B-Roll Montage \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Segment \u2014 Intro/Outro \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "ShotFX \u2014 Clone in Hallway (feather 6\u201310px) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "ShotFX \u2014 Clean Plate Patch \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "PERF Selects \u2014 Best Lines \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "B-Roll Selects \u2014 Studio \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "SYNC MAP \u2014 Performance \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Fashion Master \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Fashion Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Fashion Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Fashion Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "LOOK \u2014 (Generic) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "LOOK \u2014 Rooftop Golden Hour \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "LOOK \u2014 Studio Mirror \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "ShotFX \u2014 Clean Plate Patch (skin/hair) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "LOOK Selects \u2014 (Generic) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "LOOK Selects \u2014 Rooftop \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "LOOK Selects \u2014 Studio \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "TH Master \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "TH Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "TH Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "TH Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Interview \u2014 Radio Cut + B-Roll \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "ShotFX \u2014 Background Cleanup \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "A-Roll Selects \u2014 (Generic) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "B-Roll Selects \u2014 (Generic) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "DIL Master \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "DIL Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "DIL Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "DIL Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Chapter \u2014 (Generic) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Chapter \u2014 Coffee Run \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Chapter \u2014 Studio Session \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "ShotFX \u2014 Hand Remove Mic Cable \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Selects \u2014 (Generic) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Selects \u2014 Commute \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Selects \u2014 Coffee Shop \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Cook-Up Master \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Cook-Up Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Cook-Up Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Cook-Up Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 (Generic) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Teaser / Hook Preview \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Setup (Key \u2022 Tempo \u2022 Session) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Drums Build \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Bass Drop \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Melody Layering \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Arrangement Flip \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Performance Take \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Section \u2014 Mix Touches / Print \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "ShotFX \u2014 Hand Split at Sampler \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "ShotFX \u2014 Screen Insert (UI) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Overhead Selects \u2014 Keys \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Front Cam Selects \u2014 Takes \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Foley/Prod Selects \u2014 (Buttons \u2022 Knobs \u2022 Pads) \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "timeline": "Multicam \u2014 Overhead + Front \u2014 \u23f1 29.97p \u2022 \ud83d\udcd0 2160\u00d73840",
+      "status": "ok",
+      "warnings": [],
+      "errors": []
+    }
+  ],
+  "generated_at_utc": "2025-10-11T06:04:57Z"
+}

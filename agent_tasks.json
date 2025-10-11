@@ -1,0 +1,31 @@
+{
+  "playbook": "resolve-markers-manifest",
+  "description": "Baseline export and verification of Resolve timeline markers.",
+  "tasks": [
+    {
+      "id": "export_markers",
+      "label": "Export markers manifest",
+      "run_from": "Resolve",
+  "command": "../.venv/bin/python export_markers_manifest.py --quiet -o markers_manifest.json",
+      "expect": [
+        "markers_manifest.json created at repo root",
+        "Quiet run (no stdout summary)"
+      ]
+    },
+    {
+      "id": "verify_markers",
+      "label": "Verify markers manifest",
+      "run_from": "Resolve",
+  "command": "../.venv/bin/python verify_markers_manifest.py --quiet -i markers_manifest.json --frame-tolerance 1 --out-report markers_verify_report.json",
+      "expect": [
+        "markers_verify_report.json created at repo root",
+        "Quiet run (no stdout summary)",
+        "Exit code 0 = pass, 2 = warnings"
+      ]
+    }
+  ],
+  "notes": [
+    "Run both scripts from Resolve's scripting console or terminal so the API is available.",
+    "Adjust frame tolerance only after establishing this baseline run."
+  ]
+}
