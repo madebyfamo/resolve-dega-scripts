@@ -14,8 +14,9 @@
     "warnings": 0,
     "errors": 0,
     "frame_tolerance": 1,
-    "generated_at": "2025-10-11T06:04:57Z",
-    "generated_at_utc": "2025-10-11T06:04:57Z",
+    "generated_at": "2025-10-11T06:22:34Z",
+    "generated_at_utc": "2025-10-11T06:22:34Z",
+    "loop_end_locked": false,
     "manifest": {
       "schema": "famo.resolve.markers/v1",
       "schema_version": "1.0",
@@ -31,7 +32,27 @@
         "22s": 40,
         "30s": 54
       }
-    }
+    },
+    "loop_end_unlocked": [
+      "Money Master \u2014 12s (IG short) \u2014 2160\u00d73840 \u2022 29.97p",
+      "Money Master \u2014 22s (IG mid) \u2014 2160\u00d73840 \u2022 29.97p",
+      "Money Master \u2014 30s (IG upper) \u2014 2160\u00d73840 \u2022 29.97p",
+      "MV Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "MV Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "MV Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "Fashion Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "Fashion Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "Fashion Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "TH Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "TH Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "TH Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "DIL Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "DIL Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "DIL Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p",
+      "Cook-Up Master \u2014 12s \u2014 2160\u00d73840 \u2022 29.97p",
+      "Cook-Up Master \u2014 22s \u2014 2160\u00d73840 \u2022 29.97p",
+      "Cook-Up Master \u2014 30s \u2014 2160\u00d73840 \u2022 29.97p"
+    ]
   },
   "details": [
     {
@@ -437,5 +458,5 @@
       "errors": []
     }
   ],
-  "generated_at_utc": "2025-10-11T06:04:57Z"
+  "generated_at_utc": "2025-10-11T06:22:34Z"
 }

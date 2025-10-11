@@ -42,7 +42,17 @@ verify-manifest: ## Verify markers manifest quietly for automation
 	$(PY) verify_markers_manifest.py --quiet -i markers_manifest.json --frame-tolerance 1 --out-report markers_verify_report.json
 
 ci: export-manifest verify-manifest ## Run automation-friendly export/verify and fail on errors
-	@$(PY) -c 'import json, sys; from pathlib import Path; report=json.loads(Path("markers_verify_report.json").read_text(encoding="utf-8")); summary=report.get("summary", {}); warnings=summary.get("warnings", 0); errors=summary.get("errors", 0); print(f"[verify] timelines={summary.get("timelines_checked", 0)} warnings={warnings} errors={errors}"); sys.exit(1 if errors else 0)'
+	@$(PY) export_markers_manifest.py --quiet -o markers_manifest.tmp.json
+	@cmp -s markers_manifest.json markers_manifest.tmp.json; status=$$?; \
+	if [ $$status -eq 0 ]; then \
+		echo "[determinism] manifest stable across repeated export"; \
+	else \
+		echo "[determinism] manifest drift detected between exports" >&2; \
+		rm -f markers_manifest.tmp.json; \
+		exit 1; \
+	fi
+	@rm -f markers_manifest.tmp.json
+	@$(PY) -c "import json, sys; from pathlib import Path; report=json.loads(Path('markers_verify_report.json').read_text(encoding='utf-8')); summary=report.get('summary', {}); warnings=summary.get('warnings', 0); errors=summary.get('errors', 0); print(f\"[verify] timelines={summary.get('timelines_checked', 0)} warnings={warnings} errors={errors} loop_end_locked={summary.get('loop_end_locked')}\"); sys.exit(1 if errors else 0)"
 
 clean: ## Clean cache files
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
